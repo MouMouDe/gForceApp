@@ -87,6 +87,7 @@ public class BleServicesAdapter extends BaseExpandableListAdapter {
 		return services.get(groupPosition);
 	}
 
+	/* If this adapter contains the Service Group, return true, else false. */
 	public boolean containsGroup(String srvUuid) {
 		int srvCount = getGroupCount();
 		for (int i = 0; i < srvCount; i++) {
@@ -97,6 +98,7 @@ public class BleServicesAdapter extends BaseExpandableListAdapter {
 		return FALSE;
 	}
 
+	/* If this adapter contains the Service Characteristic Child, return true, else false. */
 	public boolean containsChild(String charUuid) {
 		int srvCount = getGroupCount();
 		int charCount = 0;
@@ -167,7 +169,7 @@ public class BleServicesAdapter extends BaseExpandableListAdapter {
 		final BluetoothGattService item = getGroup(groupPosition);
 
 		final String uuid = item.getUuid().toString();
-		final String simpleUuid = uuid.substring(4, 8);
+		final String simpleUuid = "uuid: " + uuid.substring(4, 8);
 		final BleInfoService infoService = BleInfoServices.getService(uuid);
 		final gForceService gforceService = gForceServices.getService(uuid);
 
@@ -230,10 +232,10 @@ public class BleServicesAdapter extends BaseExpandableListAdapter {
 				childPosition);
 
 		final String uuid = item.getUuid().toString();
-		final String simpleUuid = uuid.substring(4, 8);
+		final String simpleUuid = "uuid: " + uuid.substring(4, 8);
 		final String name;
 		final String modes = getModeString(item.getProperties());
-		final String notes = "Test";
+		String notes = null;
 
 		holder.service = item.getService();
 
@@ -242,24 +244,26 @@ public class BleServicesAdapter extends BaseExpandableListAdapter {
 				.getService(serviceUUID);
 		final gForceService gforceService = gForceServices.getService(serviceUUID);
 
+
+
 		if (gforceService != null) {
 			name = gforceService.getCharacteristicName(uuid);
-
-			holder.uuid.setVisibility(View.VISIBLE);
-			holder.seek.setVisibility(View.GONE);
-			holder.notes.setVisibility(View.VISIBLE);
+			notes = gforceService.getCharacteristicValue(uuid);
 		} else if (infoService != null) {
 			name = infoService.getCharacteristicName(uuid);
+			notes = infoService.getCharacteristicValue(uuid);
+		} else {
+			name = "Unknown";
+		}
 
+		if ( notes != null) {
+			holder.uuid.setVisibility(View.GONE);
+			holder.seek.setVisibility(View.GONE);
+			holder.notes.setVisibility(View.VISIBLE);
+		} else {
 			holder.uuid.setVisibility(View.VISIBLE);
 			holder.seek.setVisibility(View.GONE);
 			holder.notes.setVisibility(View.GONE);
-		} else {
-			name = "Unknown";
-
-			holder.uuid.setVisibility(View.VISIBLE);
-			holder.seek.setVisibility(View.GONE);
-			holder.notes.setVisibility(View.VISIBLE);
 		}
 
 		holder.name.setText(name);

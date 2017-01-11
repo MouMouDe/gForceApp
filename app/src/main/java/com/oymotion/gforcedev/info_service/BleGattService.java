@@ -1,4 +1,4 @@
-package com.oymotion.gforcedev.info;
+package com.oymotion.gforcedev.info_service;
 
 import java.util.HashMap;
 
@@ -7,9 +7,9 @@ import java.util.HashMap;
  */
 public class BleGattService extends BleInfoService {
 
-    private static final String UUID_SERVICE = "00001801-0000-1000-8000-00805f9b34fb";
+    public static final String UUID_SERVICE = "00001801-0000-1000-8000-00805f9b34fb";
 
-    private static final String UUID_DEVICE_NAME = "00002a05-0000-1000-8000-00805f9b34fb";
+    public static final String UUID_DEVICE_NAME = "00002a05-0000-1000-8000-00805f9b34fb";
 
     private static final HashMap<String, String> CHARACTERISTIC_MAP = new HashMap<String, String>();
 
@@ -32,5 +32,15 @@ public class BleGattService extends BleInfoService {
         if (!CHARACTERISTIC_MAP.containsKey(uuid))
             return "Unknown";
         return CHARACTERISTIC_MAP.get(uuid);
+    }
+
+    @Override
+    public String getCharacteristicValue(String uuid) {
+        return null;
+    }
+
+    @Override
+    public void setCharacteristicValue(String uuid, String valueStr) {
+
     }
 }

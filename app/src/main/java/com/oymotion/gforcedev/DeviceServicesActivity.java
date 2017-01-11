@@ -33,8 +33,10 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ExpandableListView;
+import android.widget.ProgressBar;
 import android.widget.SimpleExpandableListAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -43,8 +45,15 @@ import java.util.List;
 
 import com.oymotion.gforcedev.adapters.BleServicesAdapter;
 import com.oymotion.gforcedev.adapters.BleServicesAdapter.OnServiceItemClickListener;
+import com.oymotion.gforcedev.gforce.gForceDataService;
+import com.oymotion.gforcedev.gforce.gForceOadResetService;
+import com.oymotion.gforcedev.gforce.gForceOadService;
 import com.oymotion.gforcedev.gforce.gForceService;
 import com.oymotion.gforcedev.gforce.gForceServices;
+import com.oymotion.gforcedev.gforce_control.GForceData;
+import com.oymotion.gforcedev.gforce_control.Quaternion;
+import com.oymotion.gforcedev.info.BleDeviceInfoService;
+import com.oymotion.gforcedev.info.BleGapService;
 import com.oymotion.gforcedev.info.BleInfoService;
 import com.oymotion.gforcedev.info.BleInfoServices;
 
@@ -62,41 +71,14 @@ public class DeviceServicesActivity extends Activity {
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
 
-    // GAP profile
-    private static final String UUID_GAP_SRV = "00001800-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_GAP_DEVICE_NAME_CHAR = "00002a00-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_GAP_APPEARANCE_CHAR = "00002a01-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_GAP_PPF_CHAR = "00002a02-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_GAP_RECCON_ADDR_CHAR = "00002a03-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_GAP_PPCP_CHAR = "00002a04-0000-1000-8000-00805f9b34fb";
-
-    // Device information profile
-    private static final String UUID_DEV_INFO_SRV = "0000180a-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_DEV_SYSTEM_ID_CHAR = "00002a23-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_DEV_MODEL_NUM_CHAR = "00002a24-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_DEV_SERIAL_NUM_CHAR = "00002a25-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_DEV_FIRMWARE_REV_CHAR = "00002a26-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_DEV_HARDWARE_REV_CHAR = "00002a27-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_DEV_SOFTWARE_REV_CHAR = "00002a28-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_DEV_MANUFACTURER_NAME_CHAR = "00002a29-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_DEV_CERT_CHAR = "00002a2a-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_DEV_PNP_ID_CHAR = "00002a50-0000-1000-8000-00805f9b34fb";
-
-    // gForce Data profile
-    private static final String UUID_GFORCE_DATA_SRV = "0000fff0-0000-1000-8000-00805f9b34fb";
-    private static final String UUID_GFORCE_DATA_CHAR = "0000fff4-0000-1000-8000-00805f9b34fb";
-
-    // OAD reset profile
-    private static final String UUID_OAD_RESET_SRV = "f000ffd0-0451-4000-b000-000000000000";
-    private static final String UUID_OAD_RESET_CHAR = "f000ffd1-0451-4000-b000-000000000000";
-
-    // OAD profile
-    public static final String UUID_OAD_SRV = "f000ffc0-0451-4000-b000-000000000000";
-    public static final String UUID_OAD_IMG_ID_CHAR = "f000ffc1-0451-4000-b000-000000000000";
-    public static final String UUID_OAD_IMG_BLK_CHAR = "f000ffc2-0451-4000-b000-000000000000";
-
     private TextView connectionState;
+    private TextView dataText;
     private TextView dataField;
+    private TextView gestureText;
+    private TextView gestureField;
+    private ProgressBar oadProgress;
+    private TextView oadProgressText;
+    private int oadProgressVal = 0;
     
     private ExpandableListView gattServicesList;
     private BleServicesAdapter gattServiceAdapter;
@@ -112,21 +94,11 @@ public class DeviceServicesActivity extends Activity {
     private BluetoothGattCharacteristic oadImgBlockChar = null;
     private int blockNum = 0;
 
-    private String gapDevName = null;
-    private String gapAppearance = null;
-    private String gapPpf = null;
-    private String gapReconnAddr = null;
-    private String gapPpcp = null;
-
-    private String devSysId = null;
-    private String devModelNum = null;
-    private String devSerialNum = null;
-    private String devFirmwareRev = null;
-    private String devHardwareRev = null;
-    private String devSoftwareRev = null;
-    private String devManufacturerName = null;
-    private String devCertId = null;
-    private String devPnpId = null;
+    // gForce Data related params.
+    private static long mPackageCount = -1;
+    private static int mLastPackageID = -1;
+    private static long mTotallyLostPackageCount = 0;
+    private static long mPreviousTime;
 
 	private OnServiceItemClickListener serviceListener;
 
@@ -175,64 +147,76 @@ public class DeviceServicesActivity extends Activity {
 
                 if (gattServiceAdapter != null) {
                     // If GAP service discovered, read characteristic value.
-                    if (gattServiceAdapter.containsGroup(UUID_GAP_SRV)) {
-                        if (gattServiceAdapter.containsChild(UUID_GAP_DEVICE_NAME_CHAR)) {
-                            bleService.read(UUID_GAP_SRV, UUID_GAP_DEVICE_NAME_CHAR, null);
+                    if (gattServiceAdapter.containsGroup(BleGapService.UUID_SERVICE)) {
+                        if (gattServiceAdapter.containsChild(BleGapService.UUID_DEVICE_NAME)) {
+                            bleService.read(BleGapService.UUID_SERVICE, BleGapService.UUID_DEVICE_NAME, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_GAP_APPEARANCE_CHAR)) {
-                            bleService.read(UUID_GAP_SRV, UUID_GAP_APPEARANCE_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleGapService.UUID_APPEARANCE)) {
+                            bleService.read(BleGapService.UUID_SERVICE, BleGapService.UUID_APPEARANCE, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_GAP_PPF_CHAR)) {
-                            bleService.read(UUID_GAP_SRV, UUID_GAP_PPF_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleGapService.UUID_PPF)) {
+                            bleService.read(BleGapService.UUID_SERVICE, BleGapService.UUID_PPF, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_GAP_RECCON_ADDR_CHAR)) {
-                            bleService.read(UUID_GAP_SRV, UUID_GAP_RECCON_ADDR_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleGapService.UUID_RECCONECTION_ADDRESS)) {
+                            bleService.read(BleGapService.UUID_SERVICE, BleGapService.UUID_RECCONECTION_ADDRESS, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_GAP_PPCP_CHAR)) {
-                            bleService.read(UUID_GAP_SRV, UUID_GAP_PPCP_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleGapService.UUID_PPCP)) {
+                            bleService.read(BleGapService.UUID_SERVICE, BleGapService.UUID_PPCP, null);
                         }
                     }
 
                     // If device information service discovered, read characteristic value.
-                    if (gattServiceAdapter.containsGroup(UUID_DEV_INFO_SRV)) {
-                        if (gattServiceAdapter.containsChild(UUID_DEV_SYSTEM_ID_CHAR)) {
-                            bleService.read(UUID_DEV_INFO_SRV, UUID_DEV_SYSTEM_ID_CHAR, null);
+                    if (gattServiceAdapter.containsGroup(BleDeviceInfoService.UUID_SERVICE)) {
+                        if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_SYSTEM_ID)) {
+                            bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_SYSTEM_ID, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_DEV_MODEL_NUM_CHAR)) {
-                            bleService.read(UUID_DEV_INFO_SRV, UUID_DEV_MODEL_NUM_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_MODEL_NUMBER)) {
+                            bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_MODEL_NUMBER, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_DEV_SERIAL_NUM_CHAR)) {
-                            bleService.read(UUID_DEV_INFO_SRV, UUID_DEV_SERIAL_NUM_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_SERIAL_NUMBER)) {
+                            bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_SERIAL_NUMBER, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_DEV_FIRMWARE_REV_CHAR)) {
-                            bleService.read(UUID_DEV_INFO_SRV, UUID_DEV_FIRMWARE_REV_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_FIRMWARE_REV)) {
+                            bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_FIRMWARE_REV, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_DEV_HARDWARE_REV_CHAR)) {
-                            bleService.read(UUID_DEV_INFO_SRV, UUID_DEV_HARDWARE_REV_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_HARDWARE_REV)) {
+                            bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_HARDWARE_REV, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_DEV_SOFTWARE_REV_CHAR)) {
-                            bleService.read(UUID_DEV_INFO_SRV, UUID_DEV_SOFTWARE_REV_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_SOFTWARE_REV)) {
+                            bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_SOFTWARE_REV, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_DEV_MANUFACTURER_NAME_CHAR)) {
-                            bleService.read(UUID_DEV_INFO_SRV, UUID_DEV_MANUFACTURER_NAME_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_MANUFACTURER_NAME)) {
+                            bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_MANUFACTURER_NAME, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_DEV_CERT_CHAR)) {
-                            bleService.read(UUID_DEV_INFO_SRV, UUID_DEV_CERT_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_CERT)) {
+                            bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_CERT, null);
                         }
-                        if (gattServiceAdapter.containsChild(UUID_DEV_PNP_ID_CHAR)) {
-                            bleService.read(UUID_DEV_INFO_SRV, UUID_DEV_PNP_ID_CHAR, null);
+                        if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_PNP_ID)) {
+                            bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_PNP_ID, null);
                         }
                     }
 
-                    // If gForce OAD service discovered, should first enable characteristic
-                    // notification, to prepare for OAD flow.
-                    if (gattServiceAdapter.containsGroup(UUID_OAD_SRV)) {
-                        if (gattServiceAdapter.containsChild(UUID_OAD_IMG_ID_CHAR)) {
-                            bleService.notifyConfig(UUID_OAD_SRV, UUID_OAD_IMG_ID_CHAR, TRUE);
+                    // If gForce Data Service discovered
+                    if (gattServiceAdapter.containsGroup(gForceDataService.UUID_SERVICE)) {
+                        dataField.setVisibility(View.VISIBLE);
+                        dataText.setVisibility(View.VISIBLE);
+                        gestureText.setVisibility(View.VISIBLE);
+                        gestureField.setVisibility(View.VISIBLE);
+                    }
+
+                    // If gForce OAD service discovered
+                    if (gattServiceAdapter.containsGroup(gForceOadService.UUID_SERVICE)) {
+                        // first set oad progress bar visible.
+                        oadProgress.setVisibility(View.VISIBLE);
+                        oadProgressText.setVisibility(View.VISIBLE);
+
+                        // enable characteristic notification, to prepare for OAD flow.
+                        if (gattServiceAdapter.containsChild(gForceOadService.UUID_IMG_IDENTIFY)) {
+                            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_IDENTIFY, TRUE);
                             Log.d(TAG, "Enable OAD image identity char notify");
                         }
-                        if (gattServiceAdapter.containsChild(UUID_OAD_IMG_BLK_CHAR)) {
-                            bleService.notifyConfig(UUID_OAD_SRV, UUID_OAD_IMG_BLK_CHAR, TRUE);
+                        if (gattServiceAdapter.containsChild(gForceOadService.UUID_IMG_BLOCK)) {
+                            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
                             Log.d(TAG, "Enable OAD image block char notify");
                         }
                     }
@@ -243,51 +227,48 @@ public class DeviceServicesActivity extends Activity {
                 byte[] data = intent.getByteArrayExtra(BleService.EXTRA_DATA);
 
                 // GAP profile data
-                if (srvUuid.equals(UUID_GAP_SRV)) {
-                    if (charUuid.equals(UUID_GAP_DEVICE_NAME_CHAR)) {
-                        gapDevName = new String(data);
-                    } else if (charUuid.equals(UUID_GAP_APPEARANCE_CHAR)) {
-                        gapAppearance = new String(data);
-                    } else if (charUuid.equals(UUID_GAP_PPF_CHAR)) {
+                if (srvUuid.equals(BleGapService.UUID_SERVICE)) {
+                    if (charUuid.equals(BleGapService.UUID_DEVICE_NAME)) {
+                        BleInfoServices.getService(BleGapService.UUID_SERVICE).setCharacteristicValue(
+                                BleGapService.UUID_DEVICE_NAME, new String(data));
+                    } else if (charUuid.equals(BleGapService.UUID_APPEARANCE)) {
+                        BleInfoServices.getService(BleGapService.UUID_SERVICE).setCharacteristicValue(
+                                BleGapService.UUID_APPEARANCE, string2HexString(data));
+                    } else if (charUuid.equals(BleGapService.UUID_PPF)) {
 
-                    } else if (charUuid.equals(UUID_GAP_RECCON_ADDR_CHAR)) {
+                    } else if (charUuid.equals(BleGapService.UUID_RECCONECTION_ADDRESS)) {
 
-                    } else if (charUuid.equals(UUID_GAP_PPCP_CHAR)) {
+                    } else if (charUuid.equals(BleGapService.UUID_PPCP)) {
                         double connIntervalMin = ((data[0] & 0xFF) | ((data[1] & 0xFF) << 8)) * 1.25;
                         double connIntervalMax = ((data[2] & 0xFF) | ((data[3] & 0xFF) << 8)) * 1.25;
                         int connLatency = ((data[4] & 0xFF) | ((data[5] & 0xFF) << 8));
                         int connTimeout = ((data[6] & 0xFF) | ((data[7] & 0xFF) << 8)) * 10;
 
-//                        StringBuilder gapPpcpBuilder = new StringBuilder();
-
-                        gapPpcp = null;
+                        BleInfoServices.getService(BleGapService.UUID_SERVICE).setCharacteristicValue(
+                                BleGapService.UUID_PPCP, connIntervalMin + " " + connIntervalMax + " "
+                                        + connLatency + " " + connTimeout);
                     }
                 }
                 // Device information data
-                else if (srvUuid.equals(UUID_DEV_INFO_SRV)) {
-                    if (charUuid.equals(UUID_DEV_SYSTEM_ID_CHAR)) {
-
-                    } else if (charUuid.equals(UUID_DEV_MODEL_NUM_CHAR)) {
-
-                    } else if (charUuid.equals(UUID_DEV_SERIAL_NUM_CHAR)) {
-
-                    } else if (charUuid.equals(UUID_DEV_FIRMWARE_REV_CHAR)) {
-
-                    } else if (charUuid.equals(UUID_DEV_HARDWARE_REV_CHAR)) {
-
-                    } else if (charUuid.equals(UUID_DEV_SOFTWARE_REV_CHAR)) {
-
-                    } else if (charUuid.equals(UUID_DEV_MANUFACTURER_NAME_CHAR)) {
-
-                    } else if (charUuid.equals(UUID_DEV_CERT_CHAR)) {
-
-                    } else if (charUuid.equals(UUID_DEV_PNP_ID_CHAR)) {
-
+                else if (srvUuid.equals(BleDeviceInfoService.UUID_SERVICE)) {
+                    if ( charUuid.equals(BleDeviceInfoService.UUID_SYSTEM_ID)
+                            || charUuid.equals(BleDeviceInfoService.UUID_CERT)
+                            || charUuid.equals(BleDeviceInfoService.UUID_PNP_ID ) ) {
+                        BleInfoServices.getService(srvUuid).setCharacteristicValue(
+                                charUuid, string2HexString(data));
+                    } else if ( charUuid.equals(BleDeviceInfoService.UUID_MODEL_NUMBER)
+                            || charUuid.equals(BleDeviceInfoService.UUID_SERIAL_NUMBER)
+                            || charUuid.equals(BleDeviceInfoService.UUID_FIRMWARE_REV)
+                            || charUuid.equals(BleDeviceInfoService.UUID_HARDWARE_REV)
+                            || charUuid.equals(BleDeviceInfoService.UUID_SOFTWARE_REV)
+                            || charUuid.equals(BleDeviceInfoService.UUID_MANUFACTURER_NAME) ) {
+                        BleInfoServices.getService(srvUuid).setCharacteristicValue(
+                                charUuid, new String(data));
                     }
                 }
                 // OAD profile data
-                else if (srvUuid.equals(UUID_OAD_SRV)) {
-                    if (charUuid.equals(UUID_OAD_IMG_BLK_CHAR)) {
+                else if (srvUuid.equals(gForceOadService.UUID_SERVICE)) {
+                    if (charUuid.equals(gForceOadService.UUID_IMG_BLOCK)) {
                         Log.d(TAG, "OAD image block number received");
                         Log.d(TAG, "data len: " + data.length);
 
@@ -303,21 +284,34 @@ public class DeviceServicesActivity extends Activity {
                             Log.d(TAG, "blockNum: " + blockNum + ",  blockBuf len: " + blockWithBlkNumBuf.length);
                             dumpBytes(blockWithBlkNumBuf);
                             // Write OAD Image Block Characteristic.
-                            bleService.write(UUID_OAD_SRV,
-                                    UUID_OAD_IMG_BLK_CHAR,
+                            bleService.write(gForceOadService.UUID_SERVICE,
+                                    gForceOadService.UUID_IMG_BLOCK,
                                     blockWithBlkNumBuf);
+
                             blockNum++;
+
+                            int tempProgress = (int)(((blockNum + 1) * 1600) / imageData.length);
+
+                            if (oadProgressVal != tempProgress) {
+                                oadProgressVal = tempProgress;
+                                String progressStr = oadProgressVal + "%";
+                                oadProgress.setProgress(oadProgressVal);
+                                oadProgressText.setText(progressStr);
+                            }
                         }
                         if (data.length != 2) {
                             dumpBytes(data);
                         }
 
-                    } else if (charUuid.equals(UUID_OAD_IMG_ID_CHAR)) {
+                    } else if (charUuid.equals(gForceOadService.UUID_IMG_IDENTIFY)) {
                         Log.d(TAG, "OAD image identify char notify recieved");
                     }
                 }
-                else {
-                    displayData(srvUuid, charUuid, new String(data));
+                // gForce Data profile
+                else if (srvUuid.equals(gForceDataService.UUID_SERVICE)) {
+                    if (charUuid.equals(gForceDataService.UUID_GFORCE_DATA)) {
+                        displayData(data);
+                    }
                 }
             }
         }
@@ -353,9 +347,9 @@ public class DeviceServicesActivity extends Activity {
                         }
                     } else if (gforceService != null) {
                         Log.d(TAG, "gforceService != null");
-                        if (gforceService.getUUID().equals("f000ffd0-0451-4000-b000-000000000000")) {
+                        if (gforceService.getUUID().equals(gForceOadResetService.UUID_SERVICE)) {
                             // gForce firmware reset Service
-                            if (characteristic.getUuid().toString().equals("f000ffd1-0451-4000-b000-000000000000")) {
+                            if (characteristic.getUuid().toString().equals(gForceOadResetService.UUID_RESET)) {
                                 // reset characteristic
                                 byte[] wrtVal = {0x01, 0x02, 0x03};
                                 bleService.write(service.getUuid().toString(),
@@ -363,17 +357,17 @@ public class DeviceServicesActivity extends Activity {
                                         wrtVal);
                                 Log.d(TAG, "OAD reset write");
                             }
-                        } else if (gforceService.getUUID().equals("0000fff0-0000-1000-8000-00805f9b34fb")) {
+                        } else if (gforceService.getUUID().equals(gForceDataService.UUID_SERVICE)) {
                             // gForce Data Service
                             Log.d(TAG, "gForce Data Service");
-                            if (characteristic.getUuid().toString().equals("0000fff4-0000-1000-8000-00805f9b34fb")) {
+                            if (characteristic.getUuid().toString().equals(gForceDataService.UUID_GFORCE_DATA)) {
                                 // gForce data characteristic
                                 bleService.notifyConfig(service.getUuid().toString(),
                                         characteristic.getUuid().toString(),
                                         TRUE);
                                 Log.d(TAG, "gForce data notify enable");
                             }
-                        } else if (gforceService.getUUID().equals("f000ffc0-0451-4000-b000-000000000000")) {
+                        } else if (gforceService.getUUID().equals(gForceOadService.UUID_SERVICE)) {
                             // gForce OAD Service
                             Log.d(TAG, "gForce OAD Service");
 
@@ -387,8 +381,6 @@ public class DeviceServicesActivity extends Activity {
                             intent.addCategory(Intent.CATEGORY_OPENABLE);
                             startActivityForResult(intent,1);
                         }
-                    } else {
-                        // do nothing
                     }
 
                     return true;
@@ -412,9 +404,17 @@ public class DeviceServicesActivity extends Activity {
         }
     };
 
+    private String string2HexString(byte[] data) {
+        final StringBuilder stringBuilder = new StringBuilder(data.length);
+        for (byte byteChar : data)
+            stringBuilder.append(String.format("%02X ", byteChar));
+        return stringBuilder.toString();
+    }
+
     private void clearUI() {
         gattServicesList.setAdapter((SimpleExpandableListAdapter) null);
         dataField.setText(R.string.no_data);
+        gestureField.setText(R.string.no_data);
     }
 
 	public void setServiceListener(OnServiceItemClickListener listener) {
@@ -434,29 +434,29 @@ public class DeviceServicesActivity extends Activity {
         gattServicesList = (ExpandableListView) findViewById(R.id.gatt_services_list);
         gattServicesList.setOnChildClickListener(servicesListClickListner);
         connectionState = (TextView) findViewById(R.id.connection_state);
+        dataText = (TextView) findViewById(R.id.data_text);
         dataField = (TextView) findViewById(R.id.data_value);
+        gestureText = (TextView) findViewById(R.id.gesture_text);
+        gestureField = (TextView) findViewById(R.id.gesture_value);
+        oadProgress = (ProgressBar) findViewById(R.id.oad_progress);
+        oadProgressText = (TextView) findViewById(R.id.progress_text);
         
         getActionBar().setTitle(deviceName);
         getActionBar().setDisplayHomeAsUpEnabled(true);
 
         final Intent gattServiceIntent = new Intent(this, BleService.class);
         bindService(gattServiceIntent, serviceConnection, BIND_AUTO_CREATE);
+        registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter());
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter());
-        if (bleService != null) {
-            final boolean result = bleService.connect(deviceAddress);
-            Log.d(TAG, "Connect request result=" + result);
-        }
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        unregisterReceiver(gattUpdateReceiver);
     }
 
     @Override
@@ -472,10 +472,10 @@ public class DeviceServicesActivity extends Activity {
             Uri uri = data.getData();
             Log.d(TAG, uri.toString());
 
-            bleService.notifyConfig(UUID_OAD_SRV, UUID_OAD_IMG_ID_CHAR, TRUE);
+            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_IDENTIFY, TRUE);
             Log.d(TAG, "Enable OAD image identity char notify");
 
-            bleService.notifyConfig(UUID_OAD_SRV, UUID_OAD_IMG_BLK_CHAR, TRUE);
+            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
             Log.d(TAG, "Enable OAD image block char notify");
 
             String file_path = uri.toString().substring(5);
@@ -585,13 +585,78 @@ public class DeviceServicesActivity extends Activity {
         });
     }
 
-    private void displayData(String srvUuid, String charUuid, String data) {
-		if (data != null) {
-            dataField.setText(data);
-            if (gattServiceAdapter != null) {
-//                gattServiceAdapter.notifyDataSetChanged();
+    // Display notification data in data file text view.
+    private void displayData(byte[] data) {
+
+        if (data == null) {
+            return;
+        }
+
+        // Get a GForceData object from a legal data
+        GForceData gForceData = new GForceData.Builder(data).build();
+        if (gForceData == null) {
+            return;
+        }
+
+        // Calculate FPS
+        long time = System.currentTimeMillis();
+        if (mPackageCount == -1) {
+            mPackageCount = 1;
+            mPreviousTime = time;
+        }
+        else {
+            ++mPackageCount;
+            long timeElapsed = time - mPreviousTime;
+            if (timeElapsed >= 1000) {
+                Log.i(TAG, String.format("FPS: %d", mPackageCount * 1000 / timeElapsed));
+                mPreviousTime = time;
+                mPackageCount = 0;
             }
-		}
+        }
+        // check the lost package
+        Byte package_id = gForceData.getPackageId();
+        if (package_id != null) {
+            if (mLastPackageID != -1) {
+                int lostPackageCount = package_id - mLastPackageID;
+                if (lostPackageCount > 1) {
+                    mTotallyLostPackageCount += lostPackageCount;
+                    Log.e(TAG, String.format("Lost packages: %d last second, totally %d ", lostPackageCount, mTotallyLostPackageCount));
+                }
+            }
+            mLastPackageID = package_id;
+        }
+
+        // Display the data
+        final StringBuilder stringBuilder = new StringBuilder();
+        int type = gForceData.getType();
+        if (type == GForceData.QUATERNION_FLOAT) {
+            Quaternion q = gForceData.getQuaternion();
+
+            stringBuilder.append(String.format("    w: %f\n", q.w));
+            stringBuilder.append(String.format("    x: %f\n", q.x));
+            stringBuilder.append(String.format("    y: %f\n", q.y));
+            stringBuilder.append(String.format("    z: %f\n", q.z));
+
+            dataField.setText(stringBuilder.toString());
+        }
+        else if (type == GForceData.GESTURE) {
+            String gestureName = gForceData.getGestureName();
+            if (gestureName == null) {
+                Log.e(TAG, String.format("Illegal gesture: %d", gForceData.getGesture()));
+            }
+            stringBuilder.append(String.format("    %s", gestureName));
+//            if (mPreviousGestureName != null) {
+//                stringBuilder.append(String.format("    %s (previous)\n", mPreviousGestureName));
+//            }
+//            mPreviousGestureName = gestureName;
+            gestureField.setText(stringBuilder.toString());
+        }
+        else if (type == GForceData.STATUS_UPDATE) {
+            int status = gForceData.getStatusUpdate();
+            if ((status & GForceData.STATUS_UPDATE_BASE_COORD_FRAME_SYNCHRONIZED) != 0) {
+                Toast.makeText(this, "The pose base coordicate frame was synchronized!", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void displayGattServices(List<BluetoothGattService> gattServices) {

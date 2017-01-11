@@ -1,4 +1,4 @@
-package com.oymotion.gforcedev.gforce;
+package com.oymotion.gforcedev.gforce_service;
 
 
 /** abstract class for gforce device related services.
@@ -15,4 +15,8 @@ public abstract class gForceService {
     public abstract String getName();
 
     public abstract String getCharacteristicName(String uuid);
+
+    public abstract String getCharacteristicValue(String uuid);
+
+    public abstract void setCharacteristicValue(String uuid, String valueStr);
 }

@@ -1,4 +1,4 @@
-package com.oymotion.gforcedev.info;
+package com.oymotion.gforcedev.info_service;
 
 /** abstract class of BLE base information related services.
  *  Modified by Ethan.
@@ -14,4 +14,8 @@ public abstract class BleInfoService {
     public abstract String getName();
 
     public abstract String getCharacteristicName(String uuid);
+
+    public abstract String getCharacteristicValue(String uuid);
+
+    public abstract void setCharacteristicValue(String uuid, String valueStr);
 }

@@ -1,4 +1,4 @@
-package com.oymotion.gforcedev.gforce;
+package com.oymotion.gforcedev.gforce_service;
 
 import java.util.HashMap;
 

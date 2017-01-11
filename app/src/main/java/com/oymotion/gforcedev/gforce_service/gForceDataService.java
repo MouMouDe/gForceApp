@@ -1,4 +1,4 @@
-package com.oymotion.gforcedev.gforce;
+package com.oymotion.gforcedev.gforce_service;
 
 import java.util.HashMap;
 
@@ -11,14 +11,19 @@ public class gForceDataService extends gForceService {
     protected gForceDataService() {
     }
 
-    private static final String UUID_SERVICE = "0000fff0-0000-1000-8000-00805f9b34fb";
+    public static final String UUID_SERVICE = "0000fff0-0000-1000-8000-00805f9b34fb";
 
-    private static final String UUID_GFORCE_DATA = "0000fff4-0000-1000-8000-00805f9b34fb";
+    public static final String UUID_GFORCE_DATA = "0000fff4-0000-1000-8000-00805f9b34fb";
 
     private static final HashMap<String, String> CHARACTERISTIC_MAP = new HashMap<String, String>();
+    private static HashMap<String, String> CHARACTERISTIC_VAL_MAP = new HashMap<String, String>();
 
     static {
         CHARACTERISTIC_MAP.put(UUID_GFORCE_DATA, "gForce Data");
+    }
+
+    static {
+        CHARACTERISTIC_VAL_MAP.put(UUID_GFORCE_DATA, "Start notify");
     }
 
     @Override
@@ -36,5 +41,18 @@ public class gForceDataService extends gForceService {
         if (!CHARACTERISTIC_MAP.containsKey(uuid))
             return "Unknown";
         return CHARACTERISTIC_MAP.get(uuid);
+    }
+
+    @Override
+    public String getCharacteristicValue(String uuid) {
+        if (!CHARACTERISTIC_VAL_MAP.containsKey(uuid))
+            return null;
+        return CHARACTERISTIC_VAL_MAP.get(uuid);
+    }
+
+    @Override
+    public void setCharacteristicValue(String uuid, String valueStr) {
+        if (CHARACTERISTIC_VAL_MAP.containsKey(uuid))
+            CHARACTERISTIC_VAL_MAP.put(uuid, valueStr);
     }
 }

@@ -14,9 +14,10 @@
      limitations under the License.
 -->
 <resources>
-    <string name="app_name">BLE OAD</string>
+    <string name="app_name">gForce App</string>
     <string name="ble_not_supported">Bluetooth LE is not supported</string>
     <string name="label_data">Data:</string>
+    <string name="label_gesture">Gesture:</string>
     <string name="label_heartrate">Heart rate:</string>
     <string name="label_device_address">Device address:</string>
     <string name="label_state">State:</string>
@@ -26,6 +27,7 @@
     <string name="disconnected">Disconnected</string>
     <string name="title_devices">BLE Device Scan</string>
     <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
+    <string name="default_process">0%</string>
 
     <string name="action_demo">Demo</string>
 
