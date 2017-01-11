@@ -16,10 +16,10 @@ import java.util.HashMap;
 import java.util.List;
 
 import com.oymotion.gforcedev.R;
-import com.oymotion.gforcedev.gforce.gForceService;
-import com.oymotion.gforcedev.gforce.gForceServices;
-import com.oymotion.gforcedev.info.BleInfoService;
-import com.oymotion.gforcedev.info.BleInfoServices;
+import com.oymotion.gforcedev.gforce_service.gForceService;
+import com.oymotion.gforcedev.gforce_service.gForceServices;
+import com.oymotion.gforcedev.info_service.BleInfoService;
+import com.oymotion.gforcedev.info_service.BleInfoServices;
 
 import static java.lang.Boolean.TRUE;
 import static java.lang.Boolean.FALSE;

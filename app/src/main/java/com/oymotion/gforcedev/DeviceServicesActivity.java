@@ -45,17 +45,18 @@ import java.util.List;
 
 import com.oymotion.gforcedev.adapters.BleServicesAdapter;
 import com.oymotion.gforcedev.adapters.BleServicesAdapter.OnServiceItemClickListener;
-import com.oymotion.gforcedev.gforce.gForceDataService;
-import com.oymotion.gforcedev.gforce.gForceOadResetService;
-import com.oymotion.gforcedev.gforce.gForceOadService;
-import com.oymotion.gforcedev.gforce.gForceService;
-import com.oymotion.gforcedev.gforce.gForceServices;
+import com.oymotion.gforcedev.gforce_service.gForceDataService;
+import com.oymotion.gforcedev.gforce_service.gForceOadResetService;
+import com.oymotion.gforcedev.gforce_service.gForceOadService;
+import com.oymotion.gforcedev.gforce_service.gForceService;
+import com.oymotion.gforcedev.gforce_service.gForceServices;
 import com.oymotion.gforcedev.gforce_control.GForceData;
 import com.oymotion.gforcedev.gforce_control.Quaternion;
-import com.oymotion.gforcedev.info.BleDeviceInfoService;
-import com.oymotion.gforcedev.info.BleGapService;
-import com.oymotion.gforcedev.info.BleInfoService;
-import com.oymotion.gforcedev.info.BleInfoServices;
+import com.oymotion.gforcedev.info_service.BleDeviceInfoService;
+import com.oymotion.gforcedev.info_service.BleGapService;
+import com.oymotion.gforcedev.info_service.BleInfoService;
+import com.oymotion.gforcedev.info_service.BleInfoServices;
+import com.oymotion.gforcedev.utils.ContentUriUtil;
 
 import static java.lang.Boolean.TRUE;
 
@@ -470,7 +471,8 @@ public class DeviceServicesActivity extends Activity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (resultCode == Activity.RESULT_OK) {
             Uri uri = data.getData();
-            Log.d(TAG, uri.toString());
+            String file_path = ContentUriUtil.getPath(this, uri);
+            Log.d(TAG, file_path);
 
             bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_IDENTIFY, TRUE);
             Log.d(TAG, "Enable OAD image identity char notify");
@@ -478,7 +480,6 @@ public class DeviceServicesActivity extends Activity {
             bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
             Log.d(TAG, "Enable OAD image block char notify");
 
-            String file_path = uri.toString().substring(5);
             try {
                 // Read firmware image file from device's local storage.
                 imageData = readImageFile(file_path);
