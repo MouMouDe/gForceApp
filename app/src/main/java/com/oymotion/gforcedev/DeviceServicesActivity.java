@@ -478,8 +478,8 @@ public class DeviceServicesActivity extends Activity {
             }
         });
 
-//        String url = "file:///android_asset/webglm.html";
-        String url = "file:///android_asset/webgl.html";
+        String url = "file:///android_asset/webglm.html";
+//        String url = "file:///android_asset/webgl.html";
 
         wv_guesture.loadUrl(url);
 
