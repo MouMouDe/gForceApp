@@ -1,4 +1,4 @@
-package com.oymotion.gforcedev.view;
+package com.oymotion.gforcedev.ui.view;
 
 import android.app.Dialog;
 import android.content.Context;

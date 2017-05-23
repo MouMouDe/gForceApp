@@ -49,6 +49,8 @@
 			var container, stats, actionState,url,duration;
 			var camera, scene, renderer, controls,clock;
 			var object,action,mixer,texture;
+			var a,b,c,d;
+			var sQa,eQa;
 			var startQa,endQa,currentQa;
 			var bones = [];
 			var loader,bone;
@@ -65,6 +67,7 @@
 				camera.position.set( 7, 0, 20 );
 				scene = new THREE.Scene();
 			    endQa = new THREE.Quaternion();
+			    currentQa = new THREE.Quaternion();
 				state = false;
                 duration = 0.4;
 				clock = new THREE.Clock;
@@ -107,21 +110,25 @@
 			        startQa = new THREE.Quaternion(1,0,0,0);
 
 			    }
-			    if(bone.quaternion==undefined){
-			        bone.quaternion = new THREE.Quaternion().copy(startQa);
-			        console.log(fistObject.quaternion+"aaaaaaaaaabbbbb");
-			        console.log(fistObject.quaternion.w+"aaaaaaaaaabbbbb");
-			        console.log(fistObject.quaternion.x+"aaaaaaaaaabbbbb");
-			        console.log(fistObject.quaternion.y+"aaaaaaaaaabbbbb");
-			        console.log(fistObject.quaternion,z+"aaaaaaaaaabbbbb");
+			    console.log(endQa.w+"               WWWWWWWWWWWWW");
+                console.log(endQa.y+"               YYYYYYYYYYYYY")
+                console.log(startQa.w+"               WWWWWWWWWWWWW");
+                console.log(startQa.y+"               YYYYYYYYYYYYY")
 
-			    }
 			    endQa.w = window.guesture.getQuaternionW();
 			    endQa.x = window.guesture.getQuaternionX();
 			    endQa.y = window.guesture.getQuaternionY();
 			    endQa.z = window.guesture.getQuaternionZ();
 
-                THREE.Quaternion.slerp(startQa,endQa,fistObject.quaternion,2);
+			    console.log(endQa.w - startQa.w+"               wwwwwwwwwwwww");
+                console.log(endQa.y - startQa.y+"               yyyyyyyyyyyyy")
+
+			    console.log(endQa.w+"               wwwwwwwwwwwww");
+                console.log(endQa.y+"               yyyyyyyyyyyyy")
+
+                console.log(0.6599718928337097-0.6599606275558472+"------------------------");
+                                                 6599718928337097
+                THREE.Quaternion.slerp(startQa,endQa,fistObject.quaternion,0.01);
                 startQa = endQa;
 			}
 

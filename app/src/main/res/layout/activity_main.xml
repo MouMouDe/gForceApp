@@ -1,0 +1,122 @@
+<com.oymotion.gforcedev.ui.DragLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/dl"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <LinearLayout
+        android:id="@+id/ll_left"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="@drawable/left"
+        android:paddingTop="30dp">
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <com.oymotion.gforcedev.ui.head.RoundedImageView
+                android:layout_width="@dimen/margin40"
+                android:layout_height="@dimen/margin40"
+                android:layout_marginLeft="@dimen/menu_text_size"
+                android:src="@drawable/blackzhuce"
+                app:riv_corner_radius="100dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="20dp"
+                android:layout_marginTop="5dp"
+                android:paddingBottom="20dp"
+                android:text="某某"
+                android:textColor="@android:color/white"
+                android:textSize="@dimen/menu_text_size"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingTop="10dp">
+
+            <ListView
+                android:id="@+id/lv_left"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"></ListView>
+
+        </LinearLayout>
+    </LinearLayout>
+
+    <com.oymotion.gforcedev.ui.MyLinearLayout
+        android:id="@+id/ll_main"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#000000"
+        android:orientation="vertical">
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="50dp"
+            android:background="#55000000"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerHorizontal="true"
+                android:text="@string/app_name"
+                android:textColor="@android:color/white"
+                android:textSize="20dp"
+                android:textStyle="bold" />
+
+            <com.oymotion.gforcedev.ui.head.RoundedImageView
+                android:id="@+id/iv_header"
+                android:layout_width="@dimen/margin40"
+                android:layout_height="@dimen/margin40"
+                android:layout_marginLeft="@dimen/menu_text_size"
+                android:src="@drawable/blackzhuce"
+                app:riv_corner_radius="100dp" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <ImageView
+                android:id="@+id/iv_gforce"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="@dimen/margin40"
+                android:layout_marginBottom="150dp"
+                android:layout_marginLeft="50dp"
+                android:layout_marginRight="50dp"
+                android:background="@drawable/ic_launcher" />
+
+            <LinearLayout
+                android:layout_alignParentBottom="true"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+            <Button
+                android:id="@+id/bt_scan_device"
+                android:textColor="@color/bg_white"
+                android:layout_width="match_parent"
+                android:textStyle="bold"
+                android:layout_height="@dimen/title_height"
+                android:text="@string/scan"
+                android:layout_marginRight="@dimen/margin40"
+                android:layout_marginLeft="@dimen/margin40"
+                android:layout_alignParentBottom="true"
+                android:layout_marginBottom="@dimen/margin40"
+                android:background="@drawable/btn_bg_pressed"
+                />
+
+            </LinearLayout>
+        </RelativeLayout>
+    </com.oymotion.gforcedev.ui.MyLinearLayout>
+
+</com.oymotion.gforcedev.ui.DragLayout>

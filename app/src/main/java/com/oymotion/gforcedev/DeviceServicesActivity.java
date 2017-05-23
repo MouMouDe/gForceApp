@@ -17,7 +17,6 @@
 
 package com.oymotion.gforcedev;
 
-import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
@@ -27,15 +26,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
-import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -45,7 +40,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ExpandableListView;
-import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.SimpleExpandableListAdapter;
 import android.widget.TextView;
@@ -65,15 +59,13 @@ import com.oymotion.gforcedev.info_service.BleGapService;
 import com.oymotion.gforcedev.info_service.BleInfoService;
 import com.oymotion.gforcedev.info_service.BleInfoServices;
 import com.oymotion.gforcedev.utils.ContentUriUtil;
-import com.oymotion.gforcedev.view.LoadingDialog;
+import com.oymotion.gforcedev.ui.view.LoadingDialog;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.sql.SQLOutput;
 import java.util.List;
 
-import static android.R.attr.textAppearanceMedium;
 import static java.lang.Boolean.TRUE;
 
 /**
@@ -486,8 +478,9 @@ public class DeviceServicesActivity extends Activity {
             }
         });
 
-        String url = "file:///android_asset/webglm.html";
-//        String url = "file:///android_asset/webgl.html";
+//        String url = "file:///android_asset/webglm.html";
+        String url = "file:///android_asset/webgl.html";
+
         wv_guesture.loadUrl(url);
 
         // Sets up UI references.
@@ -578,6 +571,19 @@ public class DeviceServicesActivity extends Activity {
         unbindService(serviceConnection);
         unregisterReceiver(gattUpdateReceiver);
         bleService = null;
+        destroyWebView();
+    }
+
+    public void destroyWebView() {
+        if(wv_guesture != null) {
+            wv_guesture.clearHistory();
+            wv_guesture.clearCache(true);
+            wv_guesture.loadUrl("about:blank"); // clearView() should be changed to loadUrl("about:blank"), since clearView() is deprecated now
+            wv_guesture.freeMemory();
+            wv_guesture.pauseTimers();
+            wv_guesture.removeAllViews();
+            wv_guesture = null; // Note that mWebView.destroy() and mWebView = null do the exact same thing
+        }
     }
 
     @Override
