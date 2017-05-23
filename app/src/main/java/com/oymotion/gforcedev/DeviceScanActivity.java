@@ -74,6 +74,7 @@ public class DeviceScanActivity extends ListActivity {
         }
     }
 
+    //initialize the menu  headlayout
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.gatt_scan, menu);
@@ -129,7 +130,6 @@ public class DeviceScanActivity extends ListActivity {
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
             return;
         }
-
         init();
     }
 

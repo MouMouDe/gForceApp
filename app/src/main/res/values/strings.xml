@@ -50,4 +50,14 @@
     <string name="property_write">W</string>
     <string name="property_notify">N</string>
     <string name="property_indicate">I</string>
+
+    <string name="loading">Connecting...</string>
+    <string name="menu_main">主页</string>
+    <string name="menu_member">个人</string>
+    <string name="menu_message">消息中心</string>
+    <string name="menu_device">设备管理</string>
+    <string name="menu_setting">设置中心</string>
+    <string name="menu_introduce">关于</string>
+    <string name="scan">Scan</string>
+
 </resources>
