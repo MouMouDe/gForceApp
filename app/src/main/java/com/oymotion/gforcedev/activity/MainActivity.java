@@ -18,6 +18,7 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import com.nineoldandroids.view.ViewHelper;
+import com.oymotion.gforcedev.DeviceScanForceActivity;
 import com.oymotion.gforcedev.utils.Cheeses;
 import com.oymotion.gforcedev.DeviceScanActivity;
 import com.oymotion.gforcedev.R;
@@ -85,7 +86,7 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         bt_scan_device.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                startActivity(new Intent(MainActivity.this, DeviceScanActivity.class));
+                startActivity(new Intent(MainActivity.this, DeviceScanForceActivity.class));
             }
         });
 
@@ -112,7 +113,6 @@ public class MainActivity extends Activity implements AdapterView.OnItemClickLis
         });
 
         MyLinearLayout ll_main = (MyLinearLayout) findViewById(R.id.ll_main);
-
         ll_main.setDragLayout(dl);
     }
 

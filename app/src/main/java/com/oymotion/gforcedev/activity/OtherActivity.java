@@ -16,6 +16,7 @@ import com.oymotion.gforcedev.ui.fragment.IntroduceFragment;
 import com.oymotion.gforcedev.ui.fragment.MemberFragment;
 import com.oymotion.gforcedev.ui.fragment.MessageFragment;
 import com.oymotion.gforcedev.ui.fragment.SettingFragment;
+import com.oymotion.gforcedev.utils.ToastUtil;
 
 /**
  * OtherActivity
@@ -72,5 +73,10 @@ public class OtherActivity extends FragmentActivity {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
         return super.onTouchEvent(event);
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
     }
 }
