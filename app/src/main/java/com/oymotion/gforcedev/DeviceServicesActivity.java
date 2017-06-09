@@ -241,10 +241,10 @@ public class DeviceServicesActivity extends Activity {
                             bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_IDENTIFY, TRUE);
                             Log.d(TAG, "Enable OAD image identity char notify");
                         }
-                        if (gattServiceAdapter.containsChild(gForceOadService.UUID_IMG_BLOCK)) {
-                            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
-                            Log.d(TAG, "Enable OAD image block char notify");
-                        }
+                        //if (gattServiceAdapter.containsChild(gForceOadService.UUID_IMG_BLOCK)) {
+                        //    bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
+                        //    Log.d(TAG, "Enable OAD image block char notify");
+                        //}
                     }
                 }
             } else if (BleService.ACTION_DATA_AVAILABLE.equals(action)) {
@@ -300,6 +300,15 @@ public class DeviceServicesActivity extends Activity {
 
                         int reqBlockNum = (int) ((data[0] & 0xFF) + ((data[1] & 0xFF) << 8));
                         Log.d(TAG, "reqBlockNum = " + reqBlockNum);
+						
+						// Fix OAD difference process in gForce OAD R2 and R3
+                        if ( (reqBlockNum == 0) || (reqBlockNum == 1) ) {
+                            blockNum = reqBlockNum;
+                        }
+                        else {
+                            // do nothing
+                        }
+						
                         if ((reqBlockNum == blockNum)
                                 && ((blockNum * 16) < imageData.length)
                                 && (data.length == 2)) {
@@ -325,6 +334,10 @@ public class DeviceServicesActivity extends Activity {
                                 oadProgressText.setText(progressStr);
                             }
                         }
+						else {
+                            Log.d(TAG, "reqBlockNum != blockNum");
+                        }
+						
                         if (data.length != 2) {
                             dumpBytes(data);
                         }
@@ -396,6 +409,9 @@ public class DeviceServicesActivity extends Activity {
                         } else if (gforceService.getUUID().equals(gForceOadService.UUID_SERVICE)) {
                             // gForce OAD Service
                             Log.d(TAG, "gForce OAD Service");
+							
+							bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
+                            Log.d(TAG, "Enable OAD image block char notify");
 
                             oadSrv = service;
                             oadImgIdentifyChar = characteristic;
@@ -593,11 +609,11 @@ public class DeviceServicesActivity extends Activity {
             String file_path = ContentUriUtil.getPath(this, uri);
             Log.d(TAG, file_path);
 
-            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_IDENTIFY, TRUE);
-            Log.d(TAG, "Enable OAD image identity char notify");
+            //bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_IDENTIFY, TRUE);
+            //Log.d(TAG, "Enable OAD image identity char notify");
 
-            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
-            Log.d(TAG, "Enable OAD image block char notify");
+            //bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
+            //Log.d(TAG, "Enable OAD image block char notify");
 
             try {
                 // Read firmware image file from device's local storage.
