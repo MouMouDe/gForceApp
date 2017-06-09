@@ -59,7 +59,6 @@ public class DeviceScanActivity extends ListActivity {
             finish();
             return;
         }
-
         // Initializes a Bluetooth adapter.  For API level 18 and above, get a reference to
         // BluetoothAdapter through BluetoothManager.
         final BluetoothManager bluetoothManager =
@@ -149,7 +148,6 @@ public class DeviceScanActivity extends ListActivity {
     @Override
     protected void onPause() {
         super.onPause();
-
         if (scanner != null) {
             scanner.stopScanning();
             scanner = null;

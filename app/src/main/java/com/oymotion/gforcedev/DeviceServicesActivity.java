@@ -815,7 +815,6 @@ public class DeviceServicesActivity extends Activity {
             dataField.setTextColor(Color.BLACK);
             gestureText.setTextColor(Color.BLACK);
             gestureField.setTextColor(Color.BLACK);
-            System.out.println("dataField:"+dataField.getTextSize());
         }
     }
 

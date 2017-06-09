@@ -81,7 +81,6 @@ public abstract class BaseFragment extends Fragment {
         view.findViewById(R.id.iv_back).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                System.out.println("111111111111");
                 Finish();
             }
         });
