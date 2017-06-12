@@ -241,10 +241,10 @@ public class DeviceServicesActivity extends Activity {
                             bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_IDENTIFY, TRUE);
                             Log.d(TAG, "Enable OAD image identity char notify");
                         }
-                        //if (gattServiceAdapter.containsChild(gForceOadService.UUID_IMG_BLOCK)) {
-                        //    bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
-                        //    Log.d(TAG, "Enable OAD image block char notify");
-                        //}
+                        if (gattServiceAdapter.containsChild(gForceOadService.UUID_IMG_BLOCK)) {
+                            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
+                            Log.d(TAG, "Enable OAD image block char notify");
+                        }
                     }
                 }
             } else if (BleService.ACTION_DATA_AVAILABLE.equals(action)) {
@@ -410,8 +410,6 @@ public class DeviceServicesActivity extends Activity {
                             // gForce OAD Service
                             Log.d(TAG, "gForce OAD Service");
 							
-							bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
-                            Log.d(TAG, "Enable OAD image block char notify");
 
                             oadSrv = service;
                             oadImgIdentifyChar = characteristic;
@@ -609,11 +607,11 @@ public class DeviceServicesActivity extends Activity {
             String file_path = ContentUriUtil.getPath(this, uri);
             Log.d(TAG, file_path);
 
-            //bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_IDENTIFY, TRUE);
-            //Log.d(TAG, "Enable OAD image identity char notify");
+            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_IDENTIFY, TRUE);
+            Log.d(TAG, "Enable OAD image identity char notify");
 
-            //bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
-            //Log.d(TAG, "Enable OAD image block char notify");
+            bleService.notifyConfig(gForceOadService.UUID_SERVICE, gForceOadService.UUID_IMG_BLOCK, TRUE);
+            Log.d(TAG, "Enable OAD image block char notify");
 
             try {
                 // Read firmware image file from device's local storage.
