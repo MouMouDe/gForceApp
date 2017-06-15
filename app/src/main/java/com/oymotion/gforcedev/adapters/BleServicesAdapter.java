@@ -186,7 +186,6 @@ public class BleServicesAdapter extends BaseExpandableListAdapter {
 		holder.uuid.setText(simpleUuid);
 		holder.demo.setTag(item);
 		holder.demo.setVisibility(View.GONE);
-
 		return convertView;
 	}
 

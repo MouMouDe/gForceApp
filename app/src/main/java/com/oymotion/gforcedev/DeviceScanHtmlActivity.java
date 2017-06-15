@@ -2,7 +2,6 @@ package com.oymotion.gforcedev;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothClass;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
@@ -10,29 +9,22 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
+import android.util.Log;
 import android.view.Window;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
-import android.webkit.WebViewClient;
 import android.widget.Toast;
 
-import com.oymotion.gforcedev.utils.ToastUtil;
-
-import java.text.BreakIterator;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created by ${MouMou}
  * on 2017/5/24.
  */
 
-public class DeviceScanForceActivity extends Activity {
+public class DeviceScanHtmlActivity extends Activity {
     private WebView wv_device_scan;
     private static final int REQUEST_ENABLE_BT = 1;
     private int i = 0;
@@ -82,13 +74,14 @@ public class DeviceScanForceActivity extends Activity {
 
     @Override
     protected void onResume() {
-        System.out.println("clear");
         wv_device_scan.loadUrl("javascript:funClear()");
         wv_device_scan.resumeTimers();
         if (leDevices!=null&&rssiMap!=null){
-            System.out.println("excute");
             leDevices.clear();
             rssiMap.clear();
+            if (scanner!= null&&!scanner.isScanning){
+                scanner.startScanning();
+            }
             wv_device_scan.loadUrl("javascript:funUpdate()()");
         }
         super.onResume();
@@ -274,10 +267,21 @@ public class DeviceScanForceActivity extends Activity {
         if (device == null)
             return;
 
-        final Intent intent = new Intent(DeviceScanForceActivity.this, DeviceServicesActivity.class);
-        intent.putExtra(DeviceServicesActivity.EXTRAS_DEVICE_NAME, device.getName());
-        intent.putExtra(DeviceServicesActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
-        startActivity(intent);
+        if (device.getName().contains("OAD")){
+            final Intent intent = new Intent(DeviceScanHtmlActivity.this, DeviceOADHtmlActivity.class);
+            intent.putExtra(DeviceOADHtmlActivity.EXTRAS_DEVICE_NAME, device.getName());
+            intent.putExtra(DeviceOADHtmlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+            startActivity(intent);
+        }else{
+            final Intent intent = new Intent(DeviceScanHtmlActivity.this, DeviceServicesHtmlActivity.class);
+            intent.putExtra(DeviceServicesHtmlActivity.EXTRAS_DEVICE_NAME, device.getName());
+            intent.putExtra(DeviceServicesHtmlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+            startActivity(intent);
+           /* final Intent intent = new Intent(DeviceScanHtmlActivity.this, DeviceServicesActivity.class);
+            intent.putExtra(DeviceServicesActivity.EXTRAS_DEVICE_NAME, device.getName());
+            intent.putExtra(DeviceServicesActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
+            startActivity(intent);*/
+        }
     }
 
     //add the device which was scanned to the map

@@ -43,6 +43,8 @@
 <script src="js/OrbitControls.js"></script>
 <script src="js/Detector.js"></script>
 <script src="js/stats.min.js"></script>
+<script type="text/javascript" src="js/dat.gui.min.js"></script>
+
 
 <script>
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
@@ -53,7 +55,7 @@
 			var sQa,eQa;
 			var startQa,endQa,currentQa;
 			var bones = [];
-			var loader,bone;
+			var loader,bone,plane;
 			var cube;
 
 		    var fistAction,waveInAction,waveOutAction,shootAction,spreadAction,pinchAction;
@@ -64,7 +66,7 @@
 			function init() {
 				container = document.getElementById( 'container' );
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 7, 0, 20 );
+				camera.position.set( 0, 10, 80 );
 				scene = new THREE.Scene();
 			    endQa = new THREE.Quaternion();
 			    currentQa = new THREE.Quaternion();
@@ -78,11 +80,13 @@
 				loader.load( 'fist.dae', function ( collada ) {
 					fistObject = collada.scene;
 					object = fistObject;
-					fistObject.scale.set( 0.045, 0.045, 0.045 );
-					fistObject.position.set( 1.5, -3, 0 );
+					fistObject.scale.set( 0.15, 0.15, 0.15 );
+					fistObject.position.set( 0, 0, 5 );
                     fistMixer = new THREE.AnimationMixer( fistObject );
 					fistObject.traverse( function ( child ) {
 						if ( child instanceof THREE.SkinnedMesh ) {
+                            child.castShadow = true;
+					        child.receiveShadow = true;
 							var clip = THREE.AnimationClip.parseAnimation( child.geometry.animation, child.geometry.bones );
 							fistAction = fistMixer.clipAction( clip, child );
 							fistAction.setDuration(duration);
@@ -91,13 +95,57 @@
 					} );
 					scene.add( fistObject );
 				} );
-				//
-				var ambientLight = new THREE.AmbientLight( 0xF5DEB3 );
-				scene.add( ambientLight );
+
+				var panel = new dat.GUI( { width: window.innerWidth/4 });
+				var folder1 = panel.addFolder( 'Visibility' );
+				var folder2 = panel.addFolder( 'Action' );
+				var folder3 = panel.addFolder( 'gForceCommand' );
+				var folder4 = panel.addFolder( 'gForceData' );
+
+				settings = {
+					'show model':            true,
+					'show skeleton':         false,
+					'action fist':           funFist,
+					'action wavein':         funWaveIn,
+					'action waveout':        funWaveOut,
+					'action shoot':          funShoot,
+					'action pinch':           funPink,
+					'action duration':       0.4
+				};
+
+                folder1.add( settings, 'show model' ).onChange( showModel );
+                folder1.add( settings, 'show skeleton' ).onChange( showBone );
+                folder2.add( settings, 'action fist' );
+                folder2.add( settings, 'action wavein' );
+                folder2.add( settings, 'action waveout' );
+                folder2.add( settings, 'action shoot' );
+                folder2.add( settings, 'action pink' );
+
+
+                // Plane
+				var planceGeometry = new THREE.PlaneGeometry(150,120);
+                var planeMaterial = new THREE.MeshLambertMaterial({ color: 0xDCDCDC });
+                plane = new THREE.Mesh(planceGeometry, planeMaterial);
+				plane.receiveShadow = true;
+			    plane.castShadow = true;
+				plane.rotation.x = -0.5*Math.PI;
+                plane.position.x = 0;
+                plane.position.y = -20;
+                plane.position.z = 0;
+				scene.add( plane );
+
+
+                var spotLight = new THREE.SpotLight(0xffffff);
+                spotLight.position.set(0, 30, 0);
+                spotLight.castShadow = true;    // 让光源产生阴影
+                scene.add(spotLight);
+
+
 				//
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
+                renderer.shadowMapEnabled = true;
 				container.appendChild( renderer.domElement );
 				//
 				controls = new THREE.OrbitControls( camera, renderer.domElement );
@@ -108,27 +156,13 @@
 			function funUpdateQa(){
 			    if(startQa==undefined){
 			        startQa = new THREE.Quaternion(1,0,0,0);
-
 			    }
-			    console.log(endQa.w+"               WWWWWWWWWWWWW");
-                console.log(endQa.y+"               YYYYYYYYYYYYY")
-                console.log(startQa.w+"               WWWWWWWWWWWWW");
-                console.log(startQa.y+"               YYYYYYYYYYYYY")
-
 			    endQa.w = window.guesture.getQuaternionW();
 			    endQa.x = window.guesture.getQuaternionX();
 			    endQa.y = window.guesture.getQuaternionY();
 			    endQa.z = window.guesture.getQuaternionZ();
 
-			    console.log(endQa.w - startQa.w+"               wwwwwwwwwwwww");
-                console.log(endQa.y - startQa.y+"               yyyyyyyyyyyyy")
-
-			    console.log(endQa.w+"               wwwwwwwwwwwww");
-                console.log(endQa.y+"               yyyyyyyyyyyyy")
-
-                console.log(0.6599718928337097-0.6599606275558472+"------------------------");
-                                                 6599718928337097
-                THREE.Quaternion.slerp(startQa,endQa,fistObject.quaternion,0.01);
+                THREE.Quaternion.slerp(startQa,endQa,fistObject.quaternion,1);
                 startQa = endQa;
 			}
 
@@ -153,6 +187,19 @@
 			function animate() {
 				requestAnimationFrame( animate );
 				render();
+			}
+
+			function funShoot(){
+			}
+			function funFist(){
+			}
+			function funPink(){
+			}
+			function funWaveIn(){
+			}
+            function showModel(){
+			}
+            function showBone(){
 			}
 
 			function render() {

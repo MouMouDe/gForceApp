@@ -9,6 +9,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.oymotion.gforcedev.R;
+import com.oymotion.gforcedev.global.OymotionApplication;
+import com.oymotion.gforcedev.utils.ToastUtil;
 
 public class LoadingDialog extends Dialog {
 
@@ -57,4 +59,7 @@ public class LoadingDialog extends Dialog {
 		this.content.setText(this.contentString);
 	}
 
+	@Override
+	public void onBackPressed() {
+	}
 }
