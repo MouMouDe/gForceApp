@@ -142,7 +142,11 @@ public class DeviceServicesHtmlActivity extends Activity {
             // Automatically connects to the device upon successful start-up initialization.
             bleService.connect(deviceAddress);
             dialog.setContent("Connectting...");
-            dialog.show();
+            if (dialog.isShowing()){
+                return;
+            }else{
+                dialog.show();
+            }
         }
 
         @Override
@@ -169,8 +173,7 @@ public class DeviceServicesHtmlActivity extends Activity {
                     public void run() {
                         dialog.dismiss();
                     }
-                },5000);
-
+                },10000);
                 updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
             } else if (BleService.ACTION_GATT_DISCONNECTED.equals(action)) {
@@ -310,6 +313,9 @@ public class DeviceServicesHtmlActivity extends Activity {
 
                         int reqBlockNum = (int) ((data[0] & 0xFF) + ((data[1] & 0xFF) << 8));
                         Log.d(TAG, "reqBlockNum = " + reqBlockNum);
+
+
+
                         if ((reqBlockNum == blockNum)
                                 && ((blockNum * 16) < imageData.length)
                                 && (data.length == 2)) {
@@ -471,6 +477,12 @@ public class DeviceServicesHtmlActivity extends Activity {
         deviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
 
         dialog = new LoadingDialog(DeviceServicesHtmlActivity.this);
+        dialog.setIsBackPress(new LoadingDialog.IsBackPress() {
+            @Override
+            public void closePage() {
+                bleService.disconnect();
+            }
+        });
 
         tv_service_title = (TextView) findViewById(R.id.tv_service_title);
         wv_guesture = (WebView) findViewById(R.id.wv_guesture_html);
@@ -490,6 +502,7 @@ public class DeviceServicesHtmlActivity extends Activity {
 
         String url = "file:///android_asset/webglm.html";
 //        String url = "file:///android_asset/webgl.html";
+//        String url = "file:///android_asset/webgla.html";
 
         wv_guesture.loadUrl(url);
 
@@ -597,7 +610,6 @@ public class DeviceServicesHtmlActivity extends Activity {
             wv_guesture.clearCache(true);
             wv_guesture.loadUrl("about:blank"); // clearView() should be changed to loadUrl("about:blank"), since clearView() is deprecated now
             wv_guesture.freeMemory();
-            wv_guesture.pauseTimers();
             wv_guesture.removeAllViews();
             wv_guesture = null; // Note that mWebView.destroy() and mWebView = null do the exact same thing
         }

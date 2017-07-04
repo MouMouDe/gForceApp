@@ -593,7 +593,6 @@ public class DeviceServicesActivity extends Activity {
             wv_guesture.clearCache(true);
             wv_guesture.loadUrl("about:blank"); // clearView() should be changed to loadUrl("about:blank"), since clearView() is deprecated now
             wv_guesture.freeMemory();
-            wv_guesture.pauseTimers();
             wv_guesture.removeAllViews();
             wv_guesture = null; // Note that mWebView.destroy() and mWebView = null do the exact same thing
         }

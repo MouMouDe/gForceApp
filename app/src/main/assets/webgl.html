@@ -36,14 +36,16 @@
 <div id="info">
     <a href="https://www.oymotion.com" target="_blank">Oymotion</a>
 </div>
-
 <script src="build/three.js"></script>
 
 <script src="js/ColladaLoader.js"></script>
-<script src="js/OrbitControls.js"></script>
 <script src="js/Detector.js"></script>
 <script src="js/stats.min.js"></script>
+<script src="js/JSONLoader.js"></script>
 <script type="text/javascript" src="js/dat.gui.min.js"></script>
+
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/bootstrap.min.js"></script>
 
 
 <script>
@@ -58,6 +60,8 @@
 			var loader,bone,plane;
 			var cube;
 
+			var mixer,mesh,skeleton;
+
 		    var fistAction,waveInAction,waveOutAction,shootAction,spreadAction,pinchAction;
 		    var fistObject,waveInObject,waveOutObject,shootObject,spreadObject,pinchObject;
 		    var fistMixer,waveInMixer,waveOutMixer,shootMixer,spreadMixer,pinchMixer;
@@ -66,7 +70,7 @@
 			function init() {
 				container = document.getElementById( 'container' );
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 0, 10, 80 );
+				camera.position.set( 0, 0, 0 );
 				scene = new THREE.Scene();
 			    endQa = new THREE.Quaternion();
 			    currentQa = new THREE.Quaternion();
@@ -74,83 +78,52 @@
                 duration = 0.4;
 				clock = new THREE.Clock;
 
-                //collada
+				console.log('12138.....'+1);
+
+
+                // collada
 				loader = new THREE.ColladaLoader();
 				loader.options.convertUpAxis = true;
 				loader.load( 'fist.dae', function ( collada ) {
 					fistObject = collada.scene;
 					object = fistObject;
 					fistObject.scale.set( 0.15, 0.15, 0.15 );
-					fistObject.position.set( 0, 0, 5 );
-                    fistMixer = new THREE.AnimationMixer( fistObject );
+					fistObject.position.set( 0, 5, -10 );
+                    mixer = new THREE.AnimationMixer( fistObject );
 					fistObject.traverse( function ( child ) {
 						if ( child instanceof THREE.SkinnedMesh ) {
-                            child.castShadow = true;
-					        child.receiveShadow = true;
+						    child.rotation.x = -0.8;
+						    child.castShadow = true;
 							var clip = THREE.AnimationClip.parseAnimation( child.geometry.animation, child.geometry.bones );
-							fistAction = fistMixer.clipAction( clip, child );
+							fistAction = mixer.clipAction( clip, child );
 							fistAction.setDuration(duration);
-							bone = child.geometry.bones[1];
+							action = fistAction;
 						}
 					} );
 					scene.add( fistObject );
 				} );
 
-				var panel = new dat.GUI( { width: window.innerWidth/4 });
-				var folder1 = panel.addFolder( 'Visibility' );
-				var folder2 = panel.addFolder( 'Action' );
-				var folder3 = panel.addFolder( 'gForceCommand' );
-				var folder4 = panel.addFolder( 'gForceData' );
-
-				settings = {
-					'show model':            true,
-					'show skeleton':         false,
-					'action fist':           funFist,
-					'action wavein':         funWaveIn,
-					'action waveout':        funWaveOut,
-					'action shoot':          funShoot,
-					'action pinch':           funPink,
-					'action duration':       0.4
-				};
-
-                folder1.add( settings, 'show model' ).onChange( showModel );
-                folder1.add( settings, 'show skeleton' ).onChange( showBone );
-                folder2.add( settings, 'action fist' );
-                folder2.add( settings, 'action wavein' );
-                folder2.add( settings, 'action waveout' );
-                folder2.add( settings, 'action shoot' );
-                folder2.add( settings, 'action pink' );
-
-
+                console.log('12138.....'+4);
                 // Plane
-				var planceGeometry = new THREE.PlaneGeometry(150,120);
-                var planeMaterial = new THREE.MeshLambertMaterial({ color: 0xDCDCDC });
-                plane = new THREE.Mesh(planceGeometry, planeMaterial);
-				plane.receiveShadow = true;
-			    plane.castShadow = true;
-				plane.rotation.x = -0.5*Math.PI;
-                plane.position.x = 0;
-                plane.position.y = -20;
-                plane.position.z = 0;
-				scene.add( plane );
+				var planceGeometry_x = new THREE.PlaneGeometry(205,240);
+                var planeMaterial_x = new THREE.MeshLambertMaterial({ color: 0xfffffff });
+                var plane_x = new THREE.Mesh(planceGeometry_x, planeMaterial_x);
+                plane_x.rotation.x = -0.5*Math.PI;
+				plane_x.receiveShadow = true;
+				scene.add( plane_x );
 
+				var ambientLight = new THREE.AmbientLight( 0xffffff );
+				scene.add( ambientLight );
 
-                var spotLight = new THREE.SpotLight(0xffffff);
-                spotLight.position.set(0, 30, 0);
-                spotLight.castShadow = true;    // 让光源产生阴影
-                scene.add(spotLight);
-
-
-				//
+			    //initial renderer
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.setSize( window.innerWidth, window.innerHeight );
                 renderer.shadowMapEnabled = true;
 				container.appendChild( renderer.domElement );
-				//
-				controls = new THREE.OrbitControls( camera, renderer.domElement );
-				//
+
 				window.addEventListener( 'resize', onWindowResize, false );
+
 			}
 
 			function funUpdateQa(){
@@ -189,23 +162,10 @@
 				render();
 			}
 
-			function funShoot(){
-			}
-			function funFist(){
-			}
-			function funPink(){
-			}
-			function funWaveIn(){
-			}
-            function showModel(){
-			}
-            function showBone(){
-			}
-
 			function render() {
 			    var delta = clock.getDelta();
-				if ( fistMixer !== undefined) {
-					fistMixer.update( delta );
+				if ( mixer !== undefined) {
+					mixer.update( delta );
 				}
 				renderer.render( scene, camera );
 			}

@@ -1,18 +1,11 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:file="http://www.w3.org/1999/xhtml">
+<html lang="en">
 <head>
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Oad_gForce</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet"
-          href="css/bootstrap.min.css"
-          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ"
-          crossorigin="anonymous">
     <style type="text/css" media="all">
-
-
 #header {
 	position:absolute; z-index:1;
 	top:0; left:0;
@@ -25,7 +18,7 @@
 	background-image:-o-linear-gradient(top, #999, #666 2%, #222);
     padding:0 0 0 10px;
 	color:#eee;
-	font-size:20px;
+	font-size:18px;
 }
 
 #connect{
@@ -60,6 +53,8 @@
 	text-align:center;
 }
 
+
+
 #tip-progress{
     margin: 20px 0 0 0;
 	font-weight:bold;
@@ -70,19 +65,22 @@
     margin:10px 20px 0 20px;
 }
 
-#header a {
+#preview {
+    margin:50px 0 0 0;
+}
+
+#header div {
 	color:#f3f3f3;
 	text-decoration:none;
 	font-weight:bold;
 	text-shadow:0 -1px 0 rgba(0,0,0,0.5);
     }
 
-
     </style>
 </head>
 <body>
 <div id="divi">
-    <div id="header"><a href="http://www.oymotion.com/">OYM_OAD_Service</a>
+    <div id="header"><div>OAD_Service</div>
     </div>
 
     <div id="connect" onclick="funConnect()">Disconnect</div>
@@ -104,12 +102,18 @@
     <div id="tip-pic">
         Click the picture to select the file to upgrade...
     </div>
+
+</div>
+
+<div>
+    <section id="preview"></section>
 </div>
 
 <link rel="stylesheet"
       href="css/bootstrap.min.css">
-<script src="js/jquery-3.2.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
+<script src="js/jquery-3.2.1.min.js"></script>
+<script src="js/spin.js"></script>
 <script>
          var iniCode = '';
          var temp = 0;
@@ -126,7 +130,6 @@
           });
 
         function funSelectUpgrade(){
-            console.log(1111111111111);
             if(temp==0){
                 window.oad.selectFileToUpgrade();
             }
@@ -134,6 +137,9 @@
 
         function funUpdateProgress(){
            temp+=1;
+            if(temp==1){
+                 new Spinner().spin(document.getElementById('preview'));
+            }
            var oad = window.oad.getOadProgressVal();
            progress.innerHTML = ''
            $("div[class=progress-bar]").css("width", oad +"");
@@ -156,23 +162,7 @@
         }
 
         function funConnect(){
-            var con = document.getElementById('connect');
-            var conStr = con.innerHTML;
-            if(conStr=='DisConnect'){
-               window,oad.deviceDisConnect();
-            }else{
-               window.oad.deviceConnect();
-            }
-        }
-
-         function funUpdateConnection(i){
-             var con = document.getElementById('connect');
-             con.innerHTML ='';
-            if(i==1){
-                con.innerHTML = 'Disconnect';
-             }else if(i==2){
-                con.innerHTML = 'Connect';
-            }
+            window.oad.deviceDisConnect();
         }
 
 </script>

@@ -15,8 +15,8 @@ limitations under the License.
 -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.oymotion.gforcedev"
-    android:versionCode="4"
-    android:versionName="2.0.3">
+    android:versionCode="6"
+    android:versionName="2.1.2">
 
     <uses-sdk
         android:minSdkVersion="18"
@@ -34,6 +34,10 @@ limitations under the License.
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission-sdk-23 android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+    <uses-permission-sdk-23 android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission-sdk-23 android:name="android.permission.ACCESS_COARSE_LOCATION"/>
 
     <application
         android:name=".global.OymotionApplication"

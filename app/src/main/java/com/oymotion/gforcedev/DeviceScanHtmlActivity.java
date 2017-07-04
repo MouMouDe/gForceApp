@@ -1,5 +1,6 @@
 package com.oymotion.gforcedev;
 
+import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -9,12 +10,17 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.Window;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Toast;
+
+import com.oymotion.gforcedev.utils.ToastUtil;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,6 +40,8 @@ public class DeviceScanHtmlActivity extends Activity {
     private BluetoothAdapter bluetoothAdapter;
     private Scanner scanner;
     private HashMap<BluetoothDevice, Integer> rssiMap = new HashMap<BluetoothDevice, Integer>();
+    private static final int MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 1;
+
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -41,13 +49,23 @@ public class DeviceScanHtmlActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_device_scan);
         wv_device_scan = (WebView) findViewById(R.id.wv_device_scan);
-       /* wv_device_scan.setWebViewClient(new WebViewClient() {
+        wv_device_scan.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 view.loadUrl(url);
                 return true;
             }
-        });*/
+        });
+
+        if (ContextCompat.checkSelfPermission(DeviceScanHtmlActivity.this,
+                Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(DeviceScanHtmlActivity.this,
+                    new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                    MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION);
+        ActivityCompat.shouldShowRequestPermissionRationale(DeviceScanHtmlActivity.this,
+                Manifest.permission.READ_CONTACTS);
+
         readHtmlFormAssets("DeviceScan.html");
 
         // Use this check to determine whether BLE is supported on the device.  Then you can
@@ -70,6 +88,11 @@ public class DeviceScanHtmlActivity extends Activity {
             finish();
             return;
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
@@ -116,7 +139,6 @@ public class DeviceScanHtmlActivity extends Activity {
             scanner.stopScanning();
             scanner = null;
         }
-        wv_device_scan.pauseTimers();
     }
 
     private void init() {
@@ -277,10 +299,6 @@ public class DeviceScanHtmlActivity extends Activity {
             intent.putExtra(DeviceServicesHtmlActivity.EXTRAS_DEVICE_NAME, device.getName());
             intent.putExtra(DeviceServicesHtmlActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
             startActivity(intent);
-           /* final Intent intent = new Intent(DeviceScanHtmlActivity.this, DeviceServicesActivity.class);
-            intent.putExtra(DeviceServicesActivity.EXTRAS_DEVICE_NAME, device.getName());
-            intent.putExtra(DeviceServicesActivity.EXTRAS_DEVICE_ADDRESS, device.getAddress());
-            startActivity(intent);*/
         }
     }
 
@@ -294,8 +312,9 @@ public class DeviceScanHtmlActivity extends Activity {
 
     @Override
     public void onDestroy() {
-        destroyWebView();
         super.onDestroy();
+        destroyWebView();
+
     }
 
     //Free webview memory
@@ -305,7 +324,6 @@ public class DeviceScanHtmlActivity extends Activity {
             wv_device_scan.clearCache(true);
             wv_device_scan.loadUrl("about:blank"); // clearView() should be changed to loadUrl("about:blank"), since clearView() is deprecated now
             wv_device_scan.freeMemory();
-            wv_device_scan.removeAllViews();
             wv_device_scan = null; // Note that mWebView.destroy() and mWebView = null do the exact same thing
         }
     }

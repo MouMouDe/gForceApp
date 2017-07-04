@@ -8,6 +8,6 @@
             android:id="@+id/cv_splash"
             android:layout_marginTop="@dimen/splash_video_margin"
             android:layout_marginBottom="@dimen/splash_video_margin"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
 </RelativeLayout>

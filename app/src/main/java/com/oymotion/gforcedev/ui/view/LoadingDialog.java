@@ -3,6 +3,7 @@ package com.oymotion.gforcedev.ui.view;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
+import android.print.PrintAttributes;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.ImageView;
@@ -18,8 +19,18 @@ public class LoadingDialog extends Dialog {
 	private ImageView icon;
 	private String contentString = "loading...";
 	private TextView content;
+	private boolean isOnLoading = true;
+	private IsBackPress isBackPress;
 
 	private Animation animation = null;
+
+	public interface IsBackPress{
+		void closePage();
+	}
+
+	public void setIsBackPress(IsBackPress press){
+		isBackPress = press;
+	}
 
 	public LoadingDialog(Context context) {
 		super(context, R.style.normal_dialog);
@@ -61,5 +72,7 @@ public class LoadingDialog extends Dialog {
 
 	@Override
 	public void onBackPressed() {
+		isBackPress.closePage();
+		super.onBackPressed();
 	}
 }

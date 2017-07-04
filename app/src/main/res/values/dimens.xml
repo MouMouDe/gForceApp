@@ -34,6 +34,6 @@
     <dimen name="shop_info_image_height">320dp</dimen>
     <dimen name="tab_host_image">20dp</dimen>
     <dimen name="user_header_image">50dp</dimen>
-    <dimen name="splash_video_margin">120dp</dimen>
+    <dimen name="splash_video_margin">200dp</dimen>
 
 </resources>

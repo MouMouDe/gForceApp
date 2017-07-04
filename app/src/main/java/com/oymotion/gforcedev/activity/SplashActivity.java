@@ -38,7 +38,7 @@ public class SplashActivity extends Activity {
      */
     private void initView() {
         videoview = (CustomVideoView) findViewById(R.id.cv_splash);
-        videoview.setVideoURI(Uri.parse("android.resource://"+getPackageName()+"/"+R.raw.gforce));
+        videoview.setVideoURI(Uri.parse("android.resource://"+getPackageName()+"/"+R.raw.out));
         videoview.start();
         videoview.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
             @Override
