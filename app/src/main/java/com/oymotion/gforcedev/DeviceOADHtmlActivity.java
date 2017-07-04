@@ -362,7 +362,6 @@ public class DeviceOADHtmlActivity extends Activity {
                     if (gattServiceAdapter == null)
                         return false;
 
-
                     final BluetoothGattService service = gattServiceAdapter.getGroup(groupPosition);
                     final BluetoothGattCharacteristic characteristic = gattServiceAdapter.getChild(groupPosition, childPosition);
 
