@@ -4,12 +4,7 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Oymotion-gForce</title>
-    <!-- Bootstrap CSS -->
-    <link rel="stylesheet"
-          href="css/bootstrap.min.css"
-          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ"
-          crossorigin="anonymous">
+    <title>Oymotion_gForce</title>
     <style type="text/css" media="all">
 #header {
 	position:absolute; z-index:1;
@@ -65,7 +60,6 @@
     </div>
 </div>
 <div id="list" class="list-group">
-
 </div>
 <link rel="stylesheet"
       href="css/bootstrap.min.css">
@@ -100,15 +94,12 @@
         }
 
         function funClear(){
-            console.log('clear');
-            div1.innerHTML = '';
+            div1.innerHTML = initCode;;
         }
 
         function funClick(e){
-            console.log(e.id);
             window.device.getClickItem(e.id+'');
         }
-
 </script>
 </body>
 </html>

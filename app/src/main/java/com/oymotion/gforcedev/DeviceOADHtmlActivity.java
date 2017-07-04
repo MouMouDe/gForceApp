@@ -17,31 +17,35 @@
 
 package com.oymotion.gforcedev;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsResult;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ExpandableListView;
-import android.widget.ProgressBar;
-import android.widget.SimpleExpandableListAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -60,11 +64,14 @@ import com.oymotion.gforcedev.info_service.BleInfoService;
 import com.oymotion.gforcedev.info_service.BleInfoServices;
 import com.oymotion.gforcedev.ui.view.LoadingDialog;
 import com.oymotion.gforcedev.utils.ContentUriUtil;
+import com.oymotion.gforcedev.utils.ToastUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import static java.lang.Boolean.TRUE;
 
@@ -74,8 +81,8 @@ import static java.lang.Boolean.TRUE;
  * communicates with {@code BleService}, which in turn interacts with the
  * Bluetooth LE API.
  */
-public class DeviceServicesActivity extends Activity {
-    private final static String TAG = DeviceServicesActivity.class.getSimpleName();
+public class DeviceOADHtmlActivity extends Activity {
+    private final static String TAG = DeviceOADHtmlActivity.class.getSimpleName();
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
@@ -85,20 +92,12 @@ public class DeviceServicesActivity extends Activity {
 
     private boolean isWebShow = false;
 
-    private TextView tv_service_title;
-    private TextView connectionState;
-    private TextView dataText;
-    private TextView dataField;
-    private TextView gestureText;
-    private TextView gestureField;
-    private ProgressBar oadProgress;
-    private TextView oadProgressText;
     private int oadProgressVal = 0;
 
-    private WebView wv_guesture;
-    private WebSettings m_WebSettings;
-
-    private ExpandableListView gattServicesList;
+    private WebView wv_oad_service;
+    private WebSettings wv_html_setting;
+    private String progressStrHtml;
+    //    private ExpandableListView gattServicesList;
     private BleServicesAdapter gattServiceAdapter;
 
     private String deviceName;
@@ -134,8 +133,6 @@ public class DeviceServicesActivity extends Activity {
             }
             // Automatically connects to the device upon successful start-up initialization.
             bleService.connect(deviceAddress);
-            dialog.setContent("Connecting...");
-            dialog.show();
         }
 
         @Override
@@ -154,19 +151,17 @@ public class DeviceServicesActivity extends Activity {
         @Override
         public void onReceive(Context context, Intent intent) {
             final String action = intent.getAction();
-            Log.i("12138",action.toString());
             if (BleService.ACTION_GATT_CONNECTED.equals(action)) {
                 isConnected = true;
                 dialog.dismiss();
-                updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
             } else if (BleService.ACTION_GATT_DISCONNECTED.equals(action)) {
                 Log.i(TAG, "Disconnected from GATT server in DeviceServiceActivity");
                 isConnected = false;
-                changeTextCorlor(2);
-                updateConnectionState(R.string.disconnected);
+//                changeTextCorlor(2);
                 invalidateOptionsMenu();
                 clearUI();
+                finish();
             } else if (BleService.ACTION_GATT_SERVICES_DISCOVERED.equals(action)) {
                 // Show all the supported services and characteristics on the user interface.
                 displayGattServices(bleService.getSupportedGattServices());
@@ -224,17 +219,17 @@ public class DeviceServicesActivity extends Activity {
 
                     // If gForce Data Service discovered
                     if (gattServiceAdapter.containsGroup(gForceDataService.UUID_SERVICE)) {
-                        dataField.setVisibility(View.VISIBLE);
+                       /* dataField.setVisibility(View.VISIBLE);
                         dataText.setVisibility(View.VISIBLE);
                         gestureText.setVisibility(View.VISIBLE);
-                        gestureField.setVisibility(View.VISIBLE);
+                        gestureField.setVisibility(View.VISIBLE);*/
                     }
 
                     // If gForce OAD service discovered
                     if (gattServiceAdapter.containsGroup(gForceOadService.UUID_SERVICE)) {
                         // first set oad progress bar visible.
-                        oadProgress.setVisibility(View.VISIBLE);
-                        oadProgressText.setVisibility(View.VISIBLE);
+                       /* oadProgress.setVisibility(View.VISIBLE);
+                        oadProgressText.setVisibility(View.VISIBLE);*/
 
                         // enable characteristic notification, to prepare for OAD flow.
                         if (gattServiceAdapter.containsChild(gForceOadService.UUID_IMG_IDENTIFY)) {
@@ -300,15 +295,15 @@ public class DeviceServicesActivity extends Activity {
 
                         int reqBlockNum = (int) ((data[0] & 0xFF) + ((data[1] & 0xFF) << 8));
                         Log.d(TAG, "reqBlockNum = " + reqBlockNum);
-						
-						// Fix OAD difference process in gForce OAD R2 and R3
+
+                        // Fix OAD difference process in gForce OAD R2 and R3
                         if ( (reqBlockNum == 0) || (reqBlockNum == 1) ) {
                             blockNum = reqBlockNum;
                         }
                         else {
                             // do nothing
                         }
-						
+
                         if ((reqBlockNum == blockNum)
                                 && ((blockNum * 16) < imageData.length)
                                 && (data.length == 2)) {
@@ -329,15 +324,13 @@ public class DeviceServicesActivity extends Activity {
 
                             if (oadProgressVal != tempProgress) {
                                 oadProgressVal = tempProgress;
-                                String progressStr = oadProgressVal + "%";
-                                oadProgress.setProgress(oadProgressVal);
-                                oadProgressText.setText(progressStr);
+                                progressStrHtml = oadProgressVal + "%";
+                                wv_oad_service.loadUrl("javascript:funUpdateProgress()");
                             }
-                        }
-						else {
+                        }else {
                             Log.d(TAG, "reqBlockNum != blockNum");
                         }
-						
+
                         if (data.length != 2) {
                             dumpBytes(data);
                         }
@@ -348,7 +341,6 @@ public class DeviceServicesActivity extends Activity {
                 }
                 // gForce Data profile
                 else if (srvUuid.equals(gForceDataService.UUID_SERVICE)) {
-                    Log.i("12138","start");
                     if (charUuid.equals(gForceDataService.UUID_GFORCE_DATA)) {
                         displayData(data);
                     }
@@ -369,6 +361,7 @@ public class DeviceServicesActivity extends Activity {
                     Log.d(TAG, "item click");
                     if (gattServiceAdapter == null)
                         return false;
+
 
                     final BluetoothGattService service = gattServiceAdapter.getGroup(groupPosition);
                     final BluetoothGattCharacteristic characteristic = gattServiceAdapter.getChild(groupPosition, childPosition);
@@ -410,7 +403,8 @@ public class DeviceServicesActivity extends Activity {
                         } else if (gforceService.getUUID().equals(gForceOadService.UUID_SERVICE)) {
                             // gForce OAD Service
                             Log.d(TAG, "gForce OAD Service");
-							
+
+
 
                             oadSrv = service;
                             oadImgIdentifyChar = characteristic;
@@ -457,114 +451,153 @@ public class DeviceServicesActivity extends Activity {
     }
 
     private void clearUI() {
-        gattServicesList.setAdapter((SimpleExpandableListAdapter) null);
+       /* gattServicesList.setAdapter((SimpleExpandableListAdapter) null);
         dataField.setText(R.string.no_data);
-        gestureField.setText(R.string.no_data);
+        gestureField.setText(R.string.no_data);*/
     }
 
     public void setServiceListener(OnServiceItemClickListener listener) {
         this.serviceListener = listener;
     }
 
+    private static final int MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE= 1;
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.gatt_services_characteristics);
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        setContentView(R.layout.gatt_services_html);
+
+        if (ContextCompat.checkSelfPermission(DeviceOADHtmlActivity.this,
+                Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED)
+            ActivityCompat.requestPermissions(DeviceOADHtmlActivity.this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE);
+        ActivityCompat.shouldShowRequestPermissionRationale(DeviceOADHtmlActivity.this,
+                Manifest.permission.READ_CONTACTS);
 
         final Intent intent = getIntent();
         deviceName = intent.getStringExtra(EXTRAS_DEVICE_NAME);
         deviceAddress = intent.getStringExtra(EXTRAS_DEVICE_ADDRESS);
 
-        dialog = new LoadingDialog(DeviceServicesActivity.this);
 
-        tv_service_title = (TextView) findViewById(R.id.tv_service_title);
-        wv_guesture = (WebView) findViewById(R.id.wv_guesture);
+        dialog = new LoadingDialog(DeviceOADHtmlActivity.this);
+        dialog.setIsBackPress(new LoadingDialog.IsBackPress() {
+            @Override
+            public void closePage() {
+                dialog.dismiss();
+                finish();
+            }
+        });
 
-        m_WebSettings = wv_guesture.getSettings();
-        m_WebSettings.setJavaScriptEnabled(true);
-        wv_guesture.addJavascriptInterface(new GuestureJavaScriptInterface(), "guesture");
-        m_WebSettings.setAllowUniversalAccessFromFileURLs(true);
+        dialog.setContent("Connecting...");
+        dialog.show();
 
-        wv_guesture.setWebViewClient(new WebViewClient() {
+        wv_oad_service = (WebView) findViewById(R.id.wv_oad_service);
+
+        wv_html_setting = wv_oad_service.getSettings();
+        wv_html_setting.setJavaScriptEnabled(true);
+        wv_oad_service.addJavascriptInterface(new OadJavaScriptInterface(), "oad");
+        wv_html_setting.setAllowUniversalAccessFromFileURLs(true);
+
+
+
+        wv_oad_service.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 view.loadUrl(url);
                 return true;
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+            }
         });
 
-        String url = "file:///android_asset/webglm.html";
-//        String url = "file:///android_asset/webgl.html";
+        wv_oad_service.setWebChromeClient(new WebChromeClient()
+        {
 
-        wv_guesture.loadUrl(url);
+            @Override
+            public boolean onJsAlert(WebView view, String url, String message,
+                                     JsResult result)
+            {
+                return true;
+            }
 
-        // Sets up UI references.
-        gattServicesList = (ExpandableListView) findViewById(R.id.gatt_services_list);
-        gattServicesList.setOnChildClickListener(servicesListClickListner);
-
-        device_address = (TextView) findViewById(R.id.device_address);
-        connectionState = (TextView) findViewById(R.id.connection_state);
-        tv_connection_state = (TextView) findViewById(R.id.tv_connection_state);
-        tv_device_address = (TextView) findViewById(R.id.tv_device_address);
-        gestureText = (TextView) findViewById(R.id.gesture_text);
-        gestureField = (TextView) findViewById(R.id.gesture_value);
-        oadProgress = (ProgressBar) findViewById(R.id.oad_progress);
-        oadProgressText = (TextView) findViewById(R.id.progress_text);
-        dataText = (TextView) findViewById(R.id.data_text);
-        dataField = (TextView) findViewById(R.id.data_value);
-
-        device_address.setText(deviceAddress);
-        getActionBar().setTitle(deviceName);
-        getActionBar().setDisplayHomeAsUpEnabled(true);
+        });
+        String url = "file:///android_asset/OadgForce.html";
+//        String url = "file:///android_asset/webglm.html";
+//        String url = "http://www.baidu.com";
+        wv_oad_service.loadUrl(url);
 
         final Intent gattServiceIntent = new Intent(this, BleService.class);
         bindService(gattServiceIntent, serviceConnection, BIND_AUTO_CREATE);
         registerReceiver(gattUpdateReceiver, makeGattUpdateIntentFilter());
     }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
     @Override
     public void onBackPressed() {
+        finish();
         super.onBackPressed();
     }
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
-        System.out.println(newConfig.toString());
         super.onConfigurationChanged(newConfig);
     }
 
     //js interactive
-    final class GuestureJavaScriptInterface {
+    final class OadJavaScriptInterface {
 
-        GuestureJavaScriptInterface() {
+        OadJavaScriptInterface() {
 
         }
 
         @JavascriptInterface
         public void recenter() {
-            Toast.makeText(DeviceServicesActivity.this, "Re-center", Toast.LENGTH_SHORT).show();
+            Toast.makeText(DeviceOADHtmlActivity.this, "Re-center", Toast.LENGTH_SHORT).show();
         }
 
         @JavascriptInterface
-        public float getQuaternionW()
-        {
-            return q.w;
+        public void deviceConnect() {
+            bleService.connect(deviceAddress);
+            dialog.setContent("Connecting...");
+            if (dialog.isShowing()){
+                return;
+            }else{
+                dialog.show();
+            }
         }
         @JavascriptInterface
-        public float getQuaternionX()
-        {
-            return q.x;
-        }
-        @JavascriptInterface
-        public float getQuaternionY()
-        {
-            return q.y;
-        }
-        @JavascriptInterface
-        public float getQuaternionZ()
-        {
-            return q.z;
+        public void deviceDisConnect() {
+            bleService.disconnect();
+            ToastUtil.showCenterToast("gForce Disconnect");
         }
 
+        @JavascriptInterface
+        public String getOadProgressVal() {
+            return progressStrHtml;
+        }
+
+        @JavascriptInterface
+        public void selectFileToUpgrade(){
+            if (oadSrv==null&&oadImgIdentifyChar==null){
+                ToastUtil.showCenterToast("Service is not unavailable");
+            }
+            // select a binary file to write
+            Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+            // any file format
+            intent.setType("*/*");
+            intent.addCategory(Intent.CATEGORY_OPENABLE);
+            startActivityForResult(intent, 1);
+        }
     }
 
 
@@ -581,20 +614,23 @@ public class DeviceServicesActivity extends Activity {
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        dialog.dismiss();
+        dialog = null;
+        destroyWebView(wv_oad_service);
         unbindService(serviceConnection);
         unregisterReceiver(gattUpdateReceiver);
         bleService = null;
-        destroyWebView();
     }
 
-    public void destroyWebView() {
-        if(wv_guesture != null) {
-            wv_guesture.clearHistory();
-            wv_guesture.clearCache(true);
-            wv_guesture.loadUrl("about:blank"); // clearView() should be changed to loadUrl("about:blank"), since clearView() is deprecated now
-            wv_guesture.freeMemory();
-            wv_guesture.removeAllViews();
-            wv_guesture = null; // Note that mWebView.destroy() and mWebView = null do the exact same thing
+    public void destroyWebView(WebView wv) {
+        if (wv != null) {
+            Log.i("12138","excute-oad");
+            wv.clearHistory();
+            wv.clearCache(true);
+            wv.loadUrl("about:blank"); // clearView() should be changed to loadUrl("about:blank"), since clearView() is deprecated now
+            wv.freeMemory();
+            wv.removeAllViews();
+            wv = null; // Note that mWebView.destroy() and mWebView = null do the exact same thing
         }
     }
 
@@ -677,49 +713,9 @@ public class DeviceServicesActivity extends Activity {
         return buffer;
     }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.gatt_services, menu);
-        if (isConnected) {
-            menu.findItem(R.id.menu_connect).setVisible(false);
-            menu.findItem(R.id.menu_disconnect).setVisible(true);
-        } else {
-            menu.findItem(R.id.menu_connect).setVisible(true);
-            menu.findItem(R.id.menu_disconnect).setVisible(false);
-        }
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_connect:
-                bleService.connect(deviceAddress);
-                dialog.setContent("Connecting...");
-                dialog.show();
-                return true;
-            case R.id.menu_disconnect:
-                bleService.disconnect();
-                return true;
-            case android.R.id.home:
-                onBackPressed();
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    private void updateConnectionState(final int resourceId) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                connectionState.setText(resourceId);
-            }
-        });
-    }
-
     // Display notification data in data file text view.
     private void displayData(byte[] data) {
-        changeTextCorlor(1);
+//        changeTextCorlor(1);
 
         if (data == null) {
             return;
@@ -769,9 +765,9 @@ public class DeviceServicesActivity extends Activity {
             stringBuilder.append(String.format("y: %f\n", q.y));
             stringBuilder.append(String.format("z: %f", q.z));
 
-            dataField.setText(stringBuilder.toString());
+//            dataField.setText(stringBuilder.toString());
             //update the quaternion
-            wv_guesture.loadUrl("javascript:funUpdateQa()");
+//            wv_guesture.loadUrl("javascript:funUpdateQa()");
 
         } else if (type == GForceData.GESTURE) {
             String gestureName = gForceData.getGestureName();
@@ -783,8 +779,8 @@ public class DeviceServicesActivity extends Activity {
 //                stringBuilder.append(String.format("    %s (previous)\n", mPreviousGestureName));
 //            }
 //            mPreviousGestureName = gestureName;
-            gestureField.setText(stringBuilder.toString());
-            diaplayGuestureAction(gestureName);
+//            gestureField.setText(stringBuilder.toString());
+//            diaplayGuestureAction(gestureName);
         } else if (type == GForceData.STATUS_UPDATE) {
             int status = gForceData.getStatusUpdate();
             if ((status & GForceData.STATUS_UPDATE_BASE_COORD_FRAME_SYNCHRONIZED) != 0) {
@@ -793,80 +789,17 @@ public class DeviceServicesActivity extends Activity {
         }
     }
 
-    private void changeTextCorlor(int i) {
-        if (i==1){
-            wv_guesture.setVisibility(View.VISIBLE);
-            dataText.setVisibility(View.GONE);
-            tv_service_title.setVisibility(View.INVISIBLE);
-            gattServicesList.setVisibility(View.INVISIBLE);
-            findViewById(R.id.ll_connection).setVisibility(View.GONE);
-            findViewById(R.id.ll_device).setVisibility(View.GONE);
-            findViewById(R.id.ll_data).setPadding(0,0,0,0);
-            findViewById(R.id.ll_guesture).setPadding(0,0,0,0);
-
-            dataField.setTextColor(Color.WHITE);
-            dataField.setTextSize(12);
-            gestureText.setTextColor(Color.WHITE);
-            gestureText.setTextSize(12);
-            gestureField.setTextColor(Color.WHITE);
-            gestureField.setTextSize(12);
-        }else {
-            wv_guesture.setVisibility(View.GONE);
-            dataText.setVisibility(View.VISIBLE);
-            tv_service_title.setVisibility(View.VISIBLE);
-            gattServicesList.setVisibility(View.VISIBLE);
-            findViewById(R.id.ll_connection).setVisibility(View.VISIBLE);
-            findViewById(R.id.ll_device).setVisibility(View.VISIBLE);
-            findViewById(R.id.ll_data).setPadding(30,0,0,0);
-            findViewById(R.id.ll_guesture).setPadding(30,0,0,0);
-
-            dataField.setTextSize(18);
-            gestureText.setTextSize(18);
-            gestureField.setTextSize(18);
-
-            dataField.setTextColor(Color.BLACK);
-            gestureText.setTextColor(Color.BLACK);
-            gestureField.setTextColor(Color.BLACK);
-        }
-    }
-
-    //display the guesture action on hands model
-    private void diaplayGuestureAction(String gestureName) {
-        switch (gestureName){
-            case "GESTURE_RELAX":
-                wv_guesture.loadUrl("javascript:funRelax()");
-                break;
-            case "GESTURE_GIST":
-                wv_guesture.loadUrl("javascript:funFist()");
-                break;
-            case "GESTURE_SPREAD_FINGERS":
-                wv_guesture.loadUrl("javascript:funSpread()");
-                break;
-            case "GESTURE_WAVE_TOWARD_PALM":
-                wv_guesture.loadUrl("javascript:funWaveIn()");
-                break;
-            case "GESTURE_WAVE_BACKWARD_PALM":
-                wv_guesture.loadUrl("javascript:funWaveOut()");
-                break;
-            case "GESTURE_SHOOT":
-                wv_guesture.loadUrl("javascript:funShoot()");
-                break;
-            case "GESTURE_TUCK_FINGERS":
-                wv_guesture.loadUrl("javascript:funPinch()");
-                break;
-            case "GESTURE_UNKNOWN":
-                Toast.makeText(this,"GESTURE_UNKNOWN",Toast.LENGTH_SHORT);
-                break;
-        }
-    }
-
     private void displayGattServices(List<BluetoothGattService> gattServices) {
         if (gattServices == null)
             return;
-
-        gattServiceAdapter = new BleServicesAdapter(this, gattServices);
-        gattServiceAdapter.setServiceListener(demoClickListener);
-        gattServicesList.setAdapter(gattServiceAdapter);
+        ArrayList<BluetoothGattService> services = new ArrayList<BluetoothGattService>(gattServices.size());
+        for (BluetoothGattService gattService : gattServices) {
+            if (gattService.getUuid().equals(UUID.fromString(gForceOadService.UUID_SERVICE))) {
+                oadSrv = gattService;
+                oadImgIdentifyChar = oadSrv.getCharacteristic(UUID.fromString(gForceOadService.UUID_IMG_IDENTIFY));
+                break;
+            }
+        }
     }
 
     private static IntentFilter makeGattUpdateIntentFilter() {

@@ -3,6 +3,10 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <link rel="stylesheet"
+          href="css/bootstrap.min.css"
+          integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ"
+          crossorigin="anonymous">
     <style type="text/css" media="all">
 			body {
 				padding:0;
@@ -90,15 +94,10 @@
                 text-align:center;
             }
 
-            .container{
-                overflow:hidden;
-            }
-
 
 		</style>
 </head>
 <body>
-<div id="container">
 <div id="divi">
     <div id="header"><a href="http://www.oymotion.com/">gForce_Data</a>
     </div>
@@ -131,7 +130,7 @@
     </div>
 </div>
 
-
+<div id="container">
     <div id="quaternion">
         <div id="quaternion_w">w:</div>
         <div id="quaternion_x">x:</div>
@@ -148,7 +147,7 @@
 
 <script src="js/ColladaLoader.js"></script>
 <script src="js/Detector.js"></script>
-<script src="js/stats.min.js"></script>
+<script src="js/JSONLoader.js"></script>
 <script type="text/javascript" src="js/dat.gui.min.js"></script>
 
 <script src="js/jquery-3.2.1.min.js"></script>
@@ -158,7 +157,7 @@
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 			var container,url,duration;
 			var camera, scene, renderer,clock;
-			var object,action,mixer;
+			var object,action,mixer,mesh;
 			var loader,jsLoader;
 			var startQa,endQa,currentQa;
 			var initCode = '';
@@ -182,73 +181,53 @@
 
 				container = document.getElementById( 'container' );
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 0, -200, 60 );
-				camera.rotation.x = 1.2;
+				camera.position.set( 0, 0, 60 );
 				scene = new THREE.Scene();
 			    endQa = new THREE.Quaternion();
 				duration = 0.4;
 				clock = new THREE.Clock;
+				console.log('12138...1');
 
-                // collada
-				loader = new THREE.ColladaLoader();
-				loader.options.convertUpAxis = true;
-				loader.load( 'fist.dae', function ( collada ) {
-					fistObject = collada.scene;
-					object = fistObject;
-					fistObject.scale.set( 0.4, 0.4, 0.4 );
-					fistObject.position.set( 0, 5, -10 );
-                    fistMixer = new THREE.AnimationMixer( fistObject );
-					fistObject.traverse( function ( child ) {
-						if ( child instanceof THREE.SkinnedMesh ) {
-						    child.castShadow = true;
-							var clip = THREE.AnimationClip.parseAnimation( child.geometry.animation, child.geometry.bones );
-							fistAction = fistMixer.clipAction( clip, child );
-							fistAction.setDuration(duration);
-							action = fistAction;
-						}
-					} );
-					scene.add( fistObject );
-				} );
+                  var loader = new THREE.JSONLoader(true); //JSONLoader构造传入true，即showStatus=ture（显示加载进度）
+                  loader.load("js/hero/Hero1.js",function(geometry){
+                      mesh = newTHREE.Mesh(geometry, new THREE.MeshLambertMaterial({ color: 0xFFF7E0, ambient:0xFFF7E0,
+                      vertexColors:THREE.VertexColors,morphTargets:true}));
+                      mesh.shading= THREE.SmoothShading;//平滑着色
+                  mesh.scale.set(0.8,0.8,0.8);//比例尺
+                  mesh.position.set(0,60,0); //位置
 
-				url = 'shoot.dae';
-                initShootModels();
+                  scene.add(mesh );//添加模型
+                  mixer = newTHREE.AnimationMixer( scene );
+                  mixer.clipAction(geometry.animations[0], mesh )
+                  .setDuration(5000 )
+                  .startAt( -Math.random() )
+                  .play();//开始播放   animations[0]
 
-                url = 'waveIn.dae';
-                initWaveInModels();
+                  MovingCube=mesh;
 
-                url = 'waveOut.dae';
-                initWaveOutModels();
+                });
 
-                url = 'spread.dae';
-                initSpreadModels();
-
-                url = 'pinch.dae';
-                initPinchModels();
-
-				//set the ambient light
-				var ambientLight = new THREE.AmbientLight( 0xFFDAB9,0.6 );
-				scene.add( ambientLight );
-
-				var gridHelper_x = new THREE.GridHelper( 200, 5 );
-				gridHelper_x.rotation.x = 0.45*Math.PI;
-                gridHelper_x.position.y = 171;
+                console.log('12138...4');
+				var gridHelper_x = new THREE.GridHelper( 110, 5 );
+				gridHelper_x.rotation.x = 0.1*Math.PI;
+                gridHelper_x.position.y = 15;
                 gridHelper_x.position.z =-100;
 				scene.add( gridHelper_x );
 
 				 // Plane
-				var planceGeometry_x = new THREE.PlaneGeometry(410,400);
+				var planceGeometry_x = new THREE.PlaneGeometry(205,240);
                 var planeMaterial_x = new THREE.MeshLambertMaterial({ color: 0xfffffff });
                 plane_x = new THREE.Mesh(planceGeometry_x, planeMaterial_x);
 				plane_x.receiveShadow = true;
-				plane_x.rotation.x = -0.05*Math.PI;
+				plane_x.rotation.x = -0.4*Math.PI;
                 plane_x.position.x = 0;
-                plane_x.position.y = 170.9;
+                plane_x.position.y = 14.9;
                 plane_x.position.z = -100;
 				scene.add( plane_x );
 
                 // 添加一个光源
                 var spotLight = new THREE.SpotLight(0xFFDAB9);
-                spotLight.position.set(0, 8, 93);
+                spotLight.position.set(0, 35, 64);
                 spotLight.castShadow = true;    // 让光源产生阴影
                 scene.add(spotLight);
 
@@ -257,7 +236,6 @@
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.shadowMapEnabled = true;
 				renderer.setSize( window.innerWidth, window.innerHeight );
-
 
 				container.appendChild( renderer.domElement );
 				//
@@ -426,12 +404,13 @@
 				loader.options.convertUpAxis = true;
 				loader.load(url, function ( collada ) {
 					shootObject = collada.scene;
-					shootObject.scale.set( 0.4, 0.4, 0.4 );
+					shootObject.scale.set( 0.15, 0.15, 0.15 );
 					shootObject.position.set( 0, 5, -10 );
                     shootMixer = new THREE.AnimationMixer( shootObject );
 					shootObject.traverse( function ( child ) {
 						if ( child instanceof THREE.SkinnedMesh ) {
 						    child.castShadow = true;
+						    child.rotation.x = -0.8;
 							var clip = THREE.AnimationClip.parseAnimation( child.geometry.animation, child.geometry.bones );
 							shootAction = shootMixer.clipAction( clip, child );
 							shootAction.setDuration(duration);
@@ -445,12 +424,13 @@
 				loader.options.convertUpAxis = true;
 				loader.load(url, function ( collada ) {
 					waveInObject = collada.scene;
-					waveInObject.scale.set( 0.4, 0.4, 0.4 );
+					waveInObject.scale.set( 0.15, 0.15, 0.15 );
 					waveInObject.position.set( 0, 5, -10 );
                     waveInMixer = new THREE.AnimationMixer( waveInObject );
 					waveInObject.traverse( function ( child ) {
 						if ( child instanceof THREE.SkinnedMesh ) {
 						    child.castShadow = true;
+						    child.rotation.x = -0.8;
 							var clip = THREE.AnimationClip.parseAnimation( child.geometry.animation, child.geometry.bones );
 							waveInAction = waveInMixer.clipAction( clip, child );
 							waveInAction.setDuration(duration);
@@ -463,12 +443,13 @@
 				loader.options.convertUpAxis = true;
 				loader.load(url, function ( collada ) {
 					waveOutObject = collada.scene;
-					waveOutObject.scale.set( 0.4, 0.4, 0.4 );
+					waveOutObject.scale.set( 0.15, 0.15, 0.15 );
 					waveOutObject.position.set( 0, 5, -10 );
                     waveOutMixer = new THREE.AnimationMixer( waveOutObject );
 					waveOutObject.traverse( function ( child ) {
 						if ( child instanceof THREE.SkinnedMesh ) {
 						    child.castShadow = true;
+						    child.rotation.x = -0.8;
 							var clip = THREE.AnimationClip.parseAnimation( child.geometry.animation, child.geometry.bones );
 							waveOutAction = waveOutMixer.clipAction( clip, child );
 							waveOutAction.setDuration(duration);
@@ -482,12 +463,13 @@
 				loader.options.convertUpAxis = true;
 				loader.load(url, function ( collada ) {
 					spreadObject = collada.scene;
-					spreadObject.scale.set( 0.4, 0.4, 0.4 );
+					spreadObject.scale.set( 0.15, 0.15, 0.15 );
 					spreadObject.position.set( 0, 5, -10);
                     spreadMixer = new THREE.AnimationMixer( spreadObject );
 					spreadObject.traverse( function ( child ) {
 						if ( child instanceof THREE.SkinnedMesh ) {
 						    child.castShadow = true;
+						    child.rotation.x = -0.8;
 							var clip = THREE.AnimationClip.parseAnimation( child.geometry.animation, child.geometry.bones );
 							spreadAction = spreadMixer.clipAction( clip, child );
 							spreadAction.setDuration(duration);
@@ -501,12 +483,13 @@
 				loader.options.convertUpAxis = true;
 				loader.load(url, function ( collada ) {
 					pinchObject = collada.scene;
-					pinchObject.scale.set( 0.4, 0.4, 0.4 );
+					pinchObject.scale.set( 0.15, 0.15, 0.15 );
 					pinchObject.position.set( 0, 5, -10 );
                     pinchMixer = new THREE.AnimationMixer( pinchObject );
 					pinchObject.traverse( function ( child ) {
 						if ( child instanceof THREE.SkinnedMesh ) {
 						    child.castShadow = true;
+						    child.rotation.x = -0.8;
 							var clip = THREE.AnimationClip.parseAnimation( child.geometry.animation, child.geometry.bones );
 							pinchAction = pinchMixer.clipAction( clip, child );
 							pinchAction.setDuration(duration);
