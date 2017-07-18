@@ -1,20 +1,18 @@
-# gForce App
+# gForceApp
 
 ## Overview
-gForce App is the hub application for other applications to interact with gForce. 
-It also provides utilities for users setting, firmware upgrading and diagnosing 
-gForce. 
+gForceApp a front end application providing users with functionalities such as 
+settings, firmware upgrading and diagnosing gForce. 
 
-The design principle of this application is to make it platform portable by using 
-HTML5 as its upper logic, as well as [gForce SDK][gForceSDK] its foundation, 
-although so far its foundation is still the Android BLE 
-[gForce Data Protocol][gForceDataProtocol]!
+Currently, gForceApp supports Android only, but its design principle is making 
+it platform portable by using HTML5 as its upper logic, as well as 
+[gForce SDK][gForceSDK] its foundation, although so far its foundation is still 
+the Android BLE [gForce Data Protocol][gForceDataProtocol]!
 
-You are welcome to hack this application as you desire :) 
+You are welcome to hack it as you desire :) 
 
 ## Build instructions
-
-### Prerequisite software
+Build it with Android Studio just as build a usual Android app.
 
 ## Known issues
 
