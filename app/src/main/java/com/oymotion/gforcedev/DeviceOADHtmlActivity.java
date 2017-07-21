@@ -40,11 +40,13 @@ import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsPromptResult;
 import android.webkit.JsResult;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -58,6 +60,7 @@ import com.oymotion.gforcedev.gforce_service.gForceOadResetService;
 import com.oymotion.gforcedev.gforce_service.gForceOadService;
 import com.oymotion.gforcedev.gforce_service.gForceService;
 import com.oymotion.gforcedev.gforce_service.gForceServices;
+import com.oymotion.gforcedev.global.OymotionApplication;
 import com.oymotion.gforcedev.info_service.BleDeviceInfoService;
 import com.oymotion.gforcedev.info_service.BleGapService;
 import com.oymotion.gforcedev.info_service.BleInfoService;
@@ -325,6 +328,9 @@ public class DeviceOADHtmlActivity extends Activity {
                             if (oadProgressVal != tempProgress) {
                                 oadProgressVal = tempProgress;
                                 progressStrHtml = oadProgressVal + "%";
+                                if (oadProgressVal==100){
+                                    OymotionApplication.oadProgress = true;
+                                }
                                 wv_oad_service.loadUrl("javascript:funUpdateProgress()");
                             }
                         }else {
@@ -500,8 +506,6 @@ public class DeviceOADHtmlActivity extends Activity {
         wv_oad_service.addJavascriptInterface(new OadJavaScriptInterface(), "oad");
         wv_html_setting.setAllowUniversalAccessFromFileURLs(true);
 
-
-
         wv_oad_service.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
@@ -515,16 +519,67 @@ public class DeviceOADHtmlActivity extends Activity {
             }
         });
 
-        wv_oad_service.setWebChromeClient(new WebChromeClient()
-        {
-
+        wv_oad_service.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onJsAlert(WebView view, String url, String message,
-                                     JsResult result)
-            {
+            public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
+                AlertDialog.Builder b = new AlertDialog.Builder(DeviceOADHtmlActivity.this);
+                b.setTitle("Alert");
+                b.setMessage(message);
+                b.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.confirm();
+                    }
+                });
+                b.setCancelable(false);
+                b.create().show();
                 return true;
             }
 
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message, final JsResult result) {
+                AlertDialog.Builder b = new AlertDialog.Builder(DeviceOADHtmlActivity.this);
+                b.setTitle("Confirm");
+                b.setMessage(message);
+                b.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.confirm();
+                    }
+                });
+                b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.cancel();
+                    }
+                });
+                b.create().show();
+                return true;
+            }
+            @Override
+            public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, final JsPromptResult result) {
+                final View v = View.inflate(DeviceOADHtmlActivity.this, R.layout.prompt_dialog, null);
+                ((TextView) v.findViewById(R.id.prompt_message_text)).setText(message);
+                ((EditText) v.findViewById(R.id.prompt_input_field)).setText(defaultValue);
+                AlertDialog.Builder b = new AlertDialog.Builder(DeviceOADHtmlActivity.this);
+                b.setTitle("Prompt");
+                b.setView(v);
+                b.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String value = ((EditText) v.findViewById(R.id.prompt_input_field)).getText().toString();
+                        result.confirm(value);
+                    }
+                });
+                b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.cancel();
+                    }
+                });
+                b.create().show();
+                return true;
+            }
         });
         String url = "file:///android_asset/OadgForce.html";
 //        String url = "file:///android_asset/webglm.html";

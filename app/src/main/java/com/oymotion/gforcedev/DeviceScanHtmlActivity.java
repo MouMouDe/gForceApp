@@ -2,10 +2,12 @@ package com.oymotion.gforcedev;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
@@ -13,13 +15,20 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
 import android.view.Window;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsPromptResult;
+import android.webkit.JsResult;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
+import com.oymotion.gforcedev.global.OymotionApplication;
 import com.oymotion.gforcedev.utils.ToastUtil;
 
 import java.util.ArrayList;
@@ -41,6 +50,7 @@ public class DeviceScanHtmlActivity extends Activity {
     private Scanner scanner;
     private HashMap<BluetoothDevice, Integer> rssiMap = new HashMap<BluetoothDevice, Integer>();
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_COARSE_LOCATION = 1;
+    private AlertDialog.Builder b;
 
 
     @Override
@@ -49,10 +59,66 @@ public class DeviceScanHtmlActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_device_scan);
         wv_device_scan = (WebView) findViewById(R.id.wv_device_scan);
-        wv_device_scan.setWebViewClient(new WebViewClient() {
+
+        wv_device_scan.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
+            public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
+                b = new AlertDialog.Builder(DeviceScanHtmlActivity.this);
+                b.setTitle("Alert");
+                b.setMessage(message);
+                b.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.confirm();
+                    }
+                });
+                b.setCancelable(false);
+                b.create().show();
+                return true;
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message, final JsResult result) {
+                AlertDialog.Builder b = new AlertDialog.Builder(DeviceScanHtmlActivity.this);
+                b.setTitle("Confirm");
+                b.setMessage(message);
+                b.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.confirm();
+                    }
+                });
+                b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.cancel();
+                    }
+                });
+                b.create().show();
+                return true;
+            }
+            @Override
+            public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, final JsPromptResult result) {
+                final View v = View.inflate(DeviceScanHtmlActivity.this, R.layout.prompt_dialog, null);
+                ((TextView) v.findViewById(R.id.prompt_message_text)).setText(message);
+                ((EditText) v.findViewById(R.id.prompt_input_field)).setText(defaultValue);
+                AlertDialog.Builder b = new AlertDialog.Builder(DeviceScanHtmlActivity.this);
+                b.setTitle("Prompt");
+                b.setView(v);
+                b.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String value = ((EditText) v.findViewById(R.id.prompt_input_field)).getText().toString();
+                        result.confirm(value);
+                    }
+                });
+                b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.cancel();
+                    }
+                });
+                b.create().show();
                 return true;
             }
         });
@@ -97,6 +163,21 @@ public class DeviceScanHtmlActivity extends Activity {
 
     @Override
     protected void onResume() {
+        if (OymotionApplication.oadProgress){
+            b = new AlertDialog.Builder(DeviceScanHtmlActivity.this);
+            b.setTitle("Tip");
+            b.setMessage("gForce OAD Complete");
+            b.setPositiveButton("ok", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+
+                }
+            });
+            b.setCancelable(false);
+            b.create().show();
+            OymotionApplication.oadProgress = false;
+        }
+
         wv_device_scan.loadUrl("javascript:funClear()");
         wv_device_scan.resumeTimers();
         if (leDevices!=null&&rssiMap!=null){

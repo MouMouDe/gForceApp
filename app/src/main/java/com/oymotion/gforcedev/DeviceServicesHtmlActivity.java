@@ -18,11 +18,13 @@
 package com.oymotion.gforcedev;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattService;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
@@ -38,9 +40,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.webkit.JavascriptInterface;
+import android.webkit.JsPromptResult;
+import android.webkit.JsResult;
+import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ProgressBar;
 import android.widget.SimpleExpandableListAdapter;
@@ -91,6 +97,9 @@ public class DeviceServicesHtmlActivity extends Activity {
 
     public static final String EXTRAS_DEVICE_NAME = "DEVICE_NAME";
     public static final String EXTRAS_DEVICE_ADDRESS = "DEVICE_ADDRESS";
+
+    private String hardVersion;
+    private String firmVersion;
 
     private static final int MY_PERMISSIONS_REQUEST_READ_STORAGE = 1;
     private static final int MY_PERMISSIONS_REQUEST_WRITE_STORAGE = 1;
@@ -173,7 +182,7 @@ public class DeviceServicesHtmlActivity extends Activity {
                     public void run() {
                         dialog.dismiss();
                     }
-                },10000);
+                },2000);
                 updateConnectionState(R.string.connected);
                 invalidateOptionsMenu();
             } else if (BleService.ACTION_GATT_DISCONNECTED.equals(action)) {
@@ -222,6 +231,7 @@ public class DeviceServicesHtmlActivity extends Activity {
                         }
                         if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_FIRMWARE_REV)) {
                             bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_FIRMWARE_REV, null);
+
                         }
                         if (gattServiceAdapter.containsChild(BleDeviceInfoService.UUID_HARDWARE_REV)) {
                             bleService.read(BleDeviceInfoService.UUID_SERVICE, BleDeviceInfoService.UUID_HARDWARE_REV, null);
@@ -264,7 +274,6 @@ public class DeviceServicesHtmlActivity extends Activity {
                 String srvUuid = intent.getStringExtra(BleService.EXTRA_SERVICE_UUID);
                 String charUuid = intent.getStringExtra(BleService.EXTRA_CHARACTERISTIC_UUID);
                 byte[] data = intent.getByteArrayExtra(BleService.EXTRA_DATA);
-
                 // GAP profile data
                 if (srvUuid.equals(BleGapService.UUID_SERVICE)) {
                     if (charUuid.equals(BleGapService.UUID_DEVICE_NAME)) {
@@ -301,6 +310,12 @@ public class DeviceServicesHtmlActivity extends Activity {
                             || charUuid.equals(BleDeviceInfoService.UUID_HARDWARE_REV)
                             || charUuid.equals(BleDeviceInfoService.UUID_SOFTWARE_REV)
                             || charUuid.equals(BleDeviceInfoService.UUID_MANUFACTURER_NAME)) {
+                        if (charUuid.equals(BleDeviceInfoService.UUID_FIRMWARE_REV)){
+                            firmVersion = new String(data);
+                        }
+                        if (charUuid.equals(BleDeviceInfoService.UUID_HARDWARE_REV)){
+                            hardVersion = new String(data);
+                        }
                         BleInfoServices.getService(srvUuid).setCharacteristicValue(
                                 charUuid, new String(data));
                     }
@@ -313,8 +328,6 @@ public class DeviceServicesHtmlActivity extends Activity {
 
                         int reqBlockNum = (int) ((data[0] & 0xFF) + ((data[1] & 0xFF) << 8));
                         Log.d(TAG, "reqBlockNum = " + reqBlockNum);
-
-
 
                         if ((reqBlockNum == blockNum)
                                 && ((blockNum * 16) < imageData.length)
@@ -492,17 +505,71 @@ public class DeviceServicesHtmlActivity extends Activity {
         wv_guesture.addJavascriptInterface(new GuestureJavaScriptInterface(), "guesture");
         m_WebSettings.setAllowUniversalAccessFromFileURLs(true);
 
-        wv_guesture.setWebViewClient(new WebViewClient() {
+        wv_guesture.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
-                view.loadUrl(url);
+            public boolean onJsAlert(WebView view, String url, String message, final JsResult result) {
+                AlertDialog.Builder b = new AlertDialog.Builder(DeviceServicesHtmlActivity.this);
+                b.setTitle("Information");
+                b.setMessage(message);
+                b.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.confirm();
+                    }
+                });
+                b.setCancelable(false);
+                b.create().show();
+                return true;
+            }
+
+            @Override
+            public boolean onJsConfirm(WebView view, String url, String message, final JsResult result) {
+                AlertDialog.Builder b = new AlertDialog.Builder(DeviceServicesHtmlActivity.this);
+                b.setTitle("Confirm");
+                b.setMessage(message);
+                b.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.confirm();
+                    }
+                });
+                b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.cancel();
+                    }
+                });
+                b.create().show();
+                return true;
+            }
+            @Override
+            public boolean onJsPrompt(WebView view, String url, String message, String defaultValue, final JsPromptResult result) {
+                final View v = View.inflate(DeviceServicesHtmlActivity.this, R.layout.prompt_dialog, null);
+                ((TextView) v.findViewById(R.id.prompt_message_text)).setText(message);
+                ((EditText) v.findViewById(R.id.prompt_input_field)).setText(defaultValue);
+                AlertDialog.Builder b = new AlertDialog.Builder(DeviceServicesHtmlActivity.this);
+                b.setTitle("Prompt");
+                b.setView(v);
+                b.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        String value = ((EditText) v.findViewById(R.id.prompt_input_field)).getText().toString();
+                        result.confirm(value);
+                    }
+                });
+                b.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        result.cancel();
+                    }
+                });
+                b.create().show();
                 return true;
             }
         });
 
-        String url = "file:///android_asset/webglm.html";
-//        String url = "file:///android_asset/webgl.html";
-//        String url = "file:///android_asset/webgla.html";
+//        String url = "file:///android_asset/webglm.html";
+        String url = "file:///android_asset/webgl.html";
 
         wv_guesture.loadUrl(url);
 
@@ -581,6 +648,16 @@ public class DeviceServicesHtmlActivity extends Activity {
         @JavascriptInterface
         public void deviceDisconnect() {
             bleService.disconnect();
+        }
+
+        @JavascriptInterface
+        public String getHardVersion() {
+            return hardVersion;
+        }
+
+        @JavascriptInterface
+        public String getFirmVersion() {
+            return firmVersion;
         }
     }
 
@@ -850,7 +927,10 @@ public class DeviceServicesHtmlActivity extends Activity {
         if (gattServices == null)
             return;
 
+        gattServiceAdapter = new BleServicesAdapter(this, gattServices);
+
         ArrayList<BluetoothGattService> services = new ArrayList<BluetoothGattService>(gattServices.size());
+
         for (BluetoothGattService gattService : gattServices) {
             if (gattService.getUuid().equals(UUID.fromString(gForceDataService.UUID_SERVICE))) {
                 notifyService = gattService;

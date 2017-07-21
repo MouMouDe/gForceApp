@@ -1,129 +1,286 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>three.js webgl - guesture</title>
     <meta charset="utf-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <style>
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <style type="text/css" media="all">
 			body {
-				background:#777;
 				padding:0;
 				margin:0;
-				font-weight: bold;
 				overflow:hidden;
-			}
-			#info {
-				position: absolute;
-				top: 0px;
-				width: 100%;
-				color: #ffffff;
-				padding: 5px;
-				font-family:Monospace;
-				font-size:13px;
-				text-align:center;
-			}
-			a {
-				color: #ffffff;
-			}
+				}
+
+            #divi{
+                position:relative;
+                height:45px;
+            }
+
+            #quaternion{
+                padding:0 0 0 10px;
+                background-color:#000;
+                color: #fff;
+            }
+
+            #header {
+                position:absolute; z-index:1;
+                top:0; left:0;
+                width:100%;
+                height:45px;
+                line-height:40px;
+                background-color:#222;
+                background-image:-webkit-gradient(linear, 0 0, 0 100%, color-stop(0, #999), color-stop(0.02, #666), color-stop(1, #222));
+                background-image:-moz-linear-gradient(top, #999, #666 2%, #222);
+                background-image:-o-linear-gradient(top, #999, #666 2%, #222);
+                padding:0 0 0 10px;
+                color:#eee;
+                font-size:18px;
+            }
+
+			#header a {
+                color:#f3f3f3;
+                text-decoration:none;
+                font-weight:bold;
+                text-shadow:0 -1px 0 rgba(0,0,0,0.5);
+             }
+
+             #connect{
+                position:absolute; z-index:2;
+                color:#fff;
+                text-align:right;
+                font-weight:bold;
+                right:40px;
+                font-size:15px;
+            }
+
+            .dropdown{
+                margin-right:10px;
+                padding:0 0 4px 0;
+                position:absolute; z-index:2;
+                text-align:right;
+                color:#000;
+           }
+            .dropdown a{
+                font-size:18px;
+                color:#f3f3f3;
+                text-decoration:none;
+                font-weight:bold;
+                text-shadow:0 -1px 0 rgba(0,0,0,0.5);
+           }
+           .dropdown ul li a{
+                color:#ffffff;
+           }
+
+           .dropdown ul{
+                background-color:#222;
+                color:#ffffff;
+           }
+
+           #click{
+                position:absolute; z-index:2;
+                text-align:right;
+                padding:8px 5px 0 0;
+                width: 100%;
+           }
+
+           #divi img{
+                width:15px;
+                height:15px;
+           }
+            .dropdown ul li{
+                text-align:center;
+            }
+
+            .container{
+                overflow:hidden;
+            }
 
 
-    </style>
+		</style>
 </head>
 <body>
+<div id="container">
+    <div id="divi">
+        <div id="header"><a href="http://www.oymotion.com/">gForce_Data</a>
+        </div>
+        <div id="click">
+            <img src="file:///android_asset/back.png">
+        </div>
+        <div class="dropdown">
+            <a class="btn btn-secondary dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                gForceCommand
+            </a>
+            <ul class="dropdown-menu dropdown-menu-right" role="menu" aria-labelledby="dropdownMenuLink">
+                <li role="presentation" onclick="funDisconnect()">
+                    <a role="menuitem" tabindex="-1" href="#">Disconnect</a>
+                </li>
+                <li role="presentation" class="divider"></li>
 
-<div id="container"></div>
-<div id="info">
-    <a href="https://www.oymotion.com" target="_blank">Oymotion</a>
+                <li role="presentation" onclick="funReset()">
+                    <a role="menuitem" tabindex="-1" href="#">Firmware Reset</a>
+                </li>
+
+                <li role="presentation" class="divider"></li>
+                <li role="presentation" onclick="funShowVersion()">
+                    <a role="menuitem" tabindex="-1" href="#">F/H Version</a>
+                </li>
+
+                <li role="presentation" class="divider"></li>
+                <li role="presentation" onclick="funAction()">
+                    <a role="menuitem" tabindex="-1" href="#">Gesture Action</a>
+                </li>
+
+                <li role="presentation" class="divider"></li>
+                <li role="presentation">
+                    <img id="close" src="file:///android_asset/up.png">
+                </li>
+            </ul>
+        </div>
+    </div>
+
+
+    <div id="quaternion">
+        <div id="quaternion_w">w:</div>
+        <div id="quaternion_x">x:</div>
+        <div id="quaternion_y">y:</div>
+        <div id="quaternion_z">y:</div>
+        <div id="gesture">Gesture: Relax</div>
+    </div>
 </div>
+
+
+<link rel="stylesheet"
+      href="css/bootstrap.min.css">
 <script src="build/three.js"></script>
 
 <script src="js/ColladaLoader.js"></script>
 <script src="js/Detector.js"></script>
 <script src="js/stats.min.js"></script>
-<script src="js/JSONLoader.js"></script>
 <script type="text/javascript" src="js/dat.gui.min.js"></script>
-
+<script src="js/OrbitControls.js"></script>
 <script src="js/jquery-3.2.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 
-
 <script>
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
-			var container, stats, actionState,url,duration;
-			var camera, scene, renderer, controls,clock;
-			var object,action,mixer,texture;
-			var a,b,c,d;
-			var sQa,eQa;
+			var container,url,duration;
+			var camera, scene, renderer,clock;
+			var object,action,mixer;
+			var loader,jsLoader;
 			var startQa,endQa,currentQa;
-			var bones = [];
-			var loader,bone,plane;
-			var cube;
+			var initCode = '';
+			var quaternion_w = document.getElementById('quaternion_w');
+			var quaternion_x = document.getElementById('quaternion_x');
+			var quaternion_y = document.getElementById('quaternion_y');
+			var quaternion_z = document.getElementById('quaternion_z');
+			var gesture = document.getElementById('gesture');
+			var mesh,controls;
 
-			var mixer,mesh,skeleton;
-
-		    var fistAction,waveInAction,waveOutAction,shootAction,spreadAction,pinchAction;
-		    var fistObject,waveInObject,waveOutObject,shootObject,spreadObject,pinchObject;
-		    var fistMixer,waveInMixer,waveOutMixer,shootMixer,spreadMixer,pinchMixer;
+		    var fistAction,waveInAction,waveOutAction,shootAction,spreadAction,pinchAction,testAction,relaxAction;
 			init();
 			animate();
 			function init() {
+			    var tdArr = document.getElementsByTagName('li');
+			     for(var i=0;i<tdArr.length;i++){
+                    tdArr[i].style.backgroundColor ="696969";
+                    tdArr[i].style.color ="#ffffff";
+              }
+
 				container = document.getElementById( 'container' );
 				camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 1, 2000 );
-				camera.position.set( 0, 0, 0 );
+				camera.position.set( -500, 0, 0);
+				camera.rotation.set(1.5,-0.7,-1.8);
+
 				scene = new THREE.Scene();
 			    endQa = new THREE.Quaternion();
-			    currentQa = new THREE.Quaternion();
-				state = false;
-                duration = 0.4;
+				duration = 0.4;
 				clock = new THREE.Clock;
 
-				console.log('12138.....'+1);
+				var axis = new THREE.AxisHelper(20);
+			    axis.position.set(0,400,-100);
+			    <!--axis.position.set(0,0,0);-->
+                scene.add(axis);
 
+                 <!--var cubeGeometry = new THREE.BoxGeometry(80, 80, 80);-->
+            //    var cubeMaterial = new THREE.MeshBasicMaterial({color: 'red', wireframe: true});
+                <!--var cubeMaterial = new THREE.MeshLambertMaterial({color: 'red', wireframe: false});-->
+                <!--var cube = new THREE.Mesh(cubeGeometry, cubeMaterial);-->
+                <!--cube.castShadow = true;-->
+                <!--cube.position.set(-100,400,-30);-->
+                <!--scene.add(cube);-->
 
-                // collada
-				loader = new THREE.ColladaLoader();
-				loader.options.convertUpAxis = true;
-				loader.load( 'fist.dae', function ( collada ) {
-					fistObject = collada.scene;
-					object = fistObject;
-					fistObject.scale.set( 0.15, 0.15, 0.15 );
-					fistObject.position.set( 0, 5, -10 );
-                    mixer = new THREE.AnimationMixer( fistObject );
-					fistObject.traverse( function ( child ) {
-						if ( child instanceof THREE.SkinnedMesh ) {
-						    child.rotation.x = -0.8;
-						    child.castShadow = true;
-							var clip = THREE.AnimationClip.parseAnimation( child.geometry.animation, child.geometry.bones );
-							fistAction = mixer.clipAction( clip, child );
-							fistAction.setDuration(duration);
-							action = fistAction;
-						}
-					} );
-					scene.add( fistObject );
-				} );
+                loader = new THREE.ObjectLoader();
+				loader.load( 'gForceGesture.json', function ( loadedObject ) {
+				    loadedObject.traverse( function ( child ) {
+                        if ( child instanceof THREE.SkinnedMesh ) {
+                            mesh = child;
+                        }
+                    } );
+                    if ( mesh === undefined ) {
+                        alert( 'Unable to find a SkinnedMesh in this place:\n\n' + url + '\n\n' );
+                        return;
+                    }
+				    mesh.scale.set(2.5,2.5,2.5);
+				    mesh.position.set(-100,400,-30);
+				    scene.add( mesh );
 
-                console.log('12138.....'+4);
+				    mixer = new THREE.AnimationMixer( mesh );
+
+				    relaxAction = mixer.clipAction('relax');
+				    action = relaxAction;
+				    action.play();
+
+			        waveOutAction= mixer.clipAction( 'waveout' );
+			        waveOutAction.setDuration(duration);
+			        waveInAction= mixer.clipAction( 'wavein' );
+			        waveInAction.setDuration(duration);
+			        pinchAction= mixer.clipAction( 'pinch' );
+			        pinchAction.setDuration(duration);
+			        shootAction= mixer.clipAction( 'shoot' );
+			        shootAction.setDuration(duration);
+			        spreadAction= mixer.clipAction( 'spread' );
+			        spreadAction.setDuration(duration);
+			        fistAction= mixer.clipAction( 'fist' );
+			        fistAction.setDuration(duration);
+
+                } );
+
                 // Plane
-				var planceGeometry_x = new THREE.PlaneGeometry(205,240);
+				var planceGeometry_x = new THREE.PlaneGeometry(800,2000);
                 var planeMaterial_x = new THREE.MeshLambertMaterial({ color: 0xfffffff });
-                var plane_x = new THREE.Mesh(planceGeometry_x, planeMaterial_x);
-                plane_x.rotation.x = -0.5*Math.PI;
+                plane_x = new THREE.Mesh(planceGeometry_x, planeMaterial_x);
 				plane_x.receiveShadow = true;
+				plane_x.rotation.x = 0.5*Math.PI;
+				plane_x.rotation.y = -0.1*Math.PI;
+				plane_x.rotation.z = -0.068*Math.PI;
+                plane_x.position.set(0,500,-30);
 				scene.add( plane_x );
 
-				var ambientLight = new THREE.AmbientLight( 0xffffff );
+				var gridHelper_x = new THREE.GridHelper( 1200, 30 );
+				gridHelper_x.rotation.x = 0.03*Math.PI;
+				gridHelper_x.rotation.y = 0.05*Math.PI;
+				gridHelper_x.rotation.z = -0.1*Math.PI;
+                gridHelper_x.position.set(-60,500,-20);
+				scene.add( gridHelper_x );
+
+				//set the ambient light
+				var ambientLight = new THREE.AmbientLight( 0xFFDAB9,0.6 );
 				scene.add( ambientLight );
 
-			    //initial renderer
+                var spotLight = new THREE.SpotLight(0xFFDAB9);
+                spotLight.position.set(-400, 0, -0);
+                <!--spotLight.position.set(-500, 200, 0);-->
+                spotLight.castShadow = true;
+                scene.add(spotLight);
+
+				//
 				renderer = new THREE.WebGLRenderer();
 				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.shadowMapEnabled = true;
 				renderer.setSize( window.innerWidth, window.innerHeight );
-                renderer.shadowMapEnabled = true;
+
 				container.appendChild( renderer.domElement );
-
+				//
 				window.addEventListener( 'resize', onWindowResize, false );
-
 			}
 
 			function funUpdateQa(){
@@ -131,30 +288,36 @@
 			        startQa = new THREE.Quaternion(1,0,0,0);
 			    }
 			    endQa.w = window.guesture.getQuaternionW();
-			    endQa.x = window.guesture.getQuaternionX();
-			    endQa.y = window.guesture.getQuaternionY();
-			    endQa.z = window.guesture.getQuaternionZ();
+			    endQa.z = -window.guesture.getQuaternionX();
+			    endQa.x = window.guesture.getQuaternionY();
+			    endQa.y = -window.guesture.getQuaternionZ();
 
-                THREE.Quaternion.slerp(startQa,endQa,fistObject.quaternion,1);
+			    initCode ='w: ';
+			    initCode+=endQa.w.toFixed(6);
+			    quaternion_w.innerHTML = initCode;
+			    initCode = 'x : ';
+			    initCode+=endQa.x.toFixed(6);;
+			    quaternion_x.innerHTML = initCode;
+			    initCode = 'y : ';
+			     initCode+=endQa.y.toFixed(6);;
+			    quaternion_y.innerHTML = initCode;
+			    initCode = 'z : ';
+			     initCode+=endQa.z.toFixed(6);;
+			    quaternion_z.innerHTML = initCode;
+
+                var t = 0;
+                THREE.Quaternion.slerp(startQa,endQa,mesh.quaternion,1);
                 startQa = endQa;
+			}
+
+			function funReset(){
+			    window.guesture.funReset();
 			}
 
 			function onWindowResize() {
 				camera.aspect = window.innerWidth / window.innerHeight;
 				camera.updateProjectionMatrix();
 				renderer.setSize( window.innerWidth, window.innerHeight );
-			}
-
-	        function funWaveOut(){
-			    fistAction.stop();
-			    fistAction.loop = THREE.ONCE;
-                fistAction.play();
-			}
-
-			function funRelax(){
-			    if(fistAction!== undefined){
-                    fistAction.fadeOut(0.1);
-			    }
 			}
 
 			function animate() {
@@ -169,6 +332,95 @@
 				}
 				renderer.render( scene, camera );
 			}
-</script>
+
+			function funDisconnect(){
+                window.guesture.deviceDisconnect();
+			}
+
+			function funShowVersion(){
+			    alert('HardVersion:'+window.guesture.getHardVersion()+'\nFirmVersion:'+window.guesture.getFirmVersion());
+			}
+
+			function funAction(){
+                action.stop();
+                action = waveInAction;
+                action.loop = THREE.LoopOnce;
+                action.clampWhenFinished = true;
+                action.play();
+			    initCode = 'Gesture: Wave in';
+			    gesture.innerHTML = initCode;
+			}
+
+			function funShoot(){
+			    action.stop();
+			    action = shootAction;
+			    action.loop = THREE.LoopOnce;
+			    action.clampWhenFinished = true;
+                action.play();
+			    initCode = 'Gesture: Shoot';
+			    gesture.innerHTML = initCode;
+			}
+			function funFist(){
+			    action.stop();
+                action = fistAction;
+			    action.loop = THREE.LoopOnce;
+			    action.clampWhenFinished = true;
+                action.play();
+			    initCode = 'Gesture: Fist';
+			    gesture.innerHTML = initCode;
+			}
+			function funWaveIn(){
+			    action.stop();
+			    action = waveInAction;
+			    action.loop = THREE.LoopOnce;
+                action.clampWhenFinished = true;
+                action.play();
+			    initCode = 'Gesture: Wave in';
+			    gesture.innerHTML = initCode;
+			}
+			function funWaveOut(){
+			    action.stop();
+			    action = waveOutAction;
+			    action.loop = THREE.LoopOnce;
+                action.clampWhenFinished = true;
+                action.play();
+			    initCode = 'Gesture: Wave out';
+			    gesture.innerHTML = initCode;
+			}
+			function funSpread(){
+			    action.stop();
+			    action = spreadAction;
+			    action.loop = THREE.LoopOnce;
+                action.clampWhenFinished = true;
+                action.play();
+			    initCode = 'Gesture: Spread fingers';
+			    gesture.innerHTML = initCode;
+			}
+			function funPinch(){
+			    action.stop();
+			    action = pinchAction;
+			    action.loop = THREE.LoopOnce;
+                action.clampWhenFinished = true;
+                action.play();
+			    initCode = 'Gesture: Pinch';
+			    gesture.innerHTML = initCode;
+			}
+
+			function funUnknown(){
+			    action.stop();
+                action = relaxAction;
+                action.play();
+			    initCode = 'Gesture: Unknown';
+			    gesture.innerHTML = initCode;
+			}
+
+			function funRelax(){
+                action.stop();
+                action = relaxAction;
+                action.play();
+			    initCode = 'Gesture: Relax';
+			    gesture.innerHTML = initCode;
+			}
+		</script>
 </body>
 </html>

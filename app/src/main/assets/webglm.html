@@ -120,9 +120,15 @@
             </li>
 
             <li role="presentation" class="divider"></li>
+            <li role="presentation" onclick="funShowVersion()">
+                <a role="menuitem" tabindex="-1" href="#">F/H Version</a>
+            </li>
+
+            <li role="presentation" class="divider"></li>
             <li role="presentation">
                 <a role="menuitem" tabindex="-1" href="#">Gesture Action</a>
             </li>
+
             <li role="presentation" class="divider"></li>
             <li role="presentation">
                 <img id="close" src="file:///android_asset/up.png">
@@ -150,7 +156,7 @@
 <script src="js/Detector.js"></script>
 <script src="js/stats.min.js"></script>
 <script type="text/javascript" src="js/dat.gui.min.js"></script>
-
+<script src="js/OrbitControls.js"></script>
 <script src="js/jquery-3.2.1.min.js"></script>
 <script src="js/bootstrap.min.js"></script>
 
@@ -162,6 +168,7 @@
 			var loader,jsLoader;
 			var startQa,endQa,currentQa;
 			var initCode = '';
+			var controls;
 			var quaternion_w = document.getElementById('quaternion_w');
 			var quaternion_x = document.getElementById('quaternion_x');
 			var quaternion_y = document.getElementById('quaternion_y');
@@ -210,20 +217,20 @@
 					scene.add( fistObject );
 				} );
 
-				url = 'shoot.dae';
-                initShootModels();
+				<!--url = 'shoot.dae';-->
+                <!--initShootModels();-->
 
-                url = 'waveIn.dae';
-                initWaveInModels();
+                <!--url = 'waveIn.dae';-->
+                <!--initWaveInModels();-->
 
-                url = 'waveOut.dae';
-                initWaveOutModels();
+                <!--url = 'waveOut.dae';-->
+                <!--initWaveOutModels();-->
 
-                url = 'spread.dae';
-                initSpreadModels();
+                <!--url = 'spread.dae';-->
+                <!--initSpreadModels();-->
 
-                url = 'pinch.dae';
-                initPinchModels();
+                <!--url = 'pinch.dae';-->
+                <!--initPinchModels();-->
 
 				//set the ambient light
 				var ambientLight = new THREE.AmbientLight( 0xFFDAB9,0.6 );
@@ -246,10 +253,9 @@
                 plane_x.position.z = -100;
 				scene.add( plane_x );
 
-                // 添加一个光源
                 var spotLight = new THREE.SpotLight(0xFFDAB9);
                 spotLight.position.set(0, 8, 93);
-                spotLight.castShadow = true;    // 让光源产生阴影
+                spotLight.castShadow = true;
                 scene.add(spotLight);
 
 				//
@@ -257,7 +263,6 @@
 				renderer.setPixelRatio( window.devicePixelRatio );
 				renderer.shadowMapEnabled = true;
 				renderer.setSize( window.innerWidth, window.innerHeight );
-
 
 				container.appendChild( renderer.domElement );
 				//
@@ -320,7 +325,11 @@
 			}
 
 			function funDisconnect(){
-                    window.guesture.deviceDisconnect();
+                window.guesture.deviceDisconnect();
+			}
+
+			function funShowVersion(){
+			    alert('HardVersion:'+window.guesture.getHardVersion()+'\nFirmVersion:'+window.guesture.getFirmVersion());
 			}
 
 			function funShoot(){
@@ -329,7 +338,7 @@
 			    object = shootObject;
 			    action = shootAction;
 			    mixer = shootMixer;
-			    action.loop = THREE.ONCE;
+			    action.loop = THREE.LoopOnce;
 
 			    initCode = 'Gesture: Shoot';
 			    gesture.innerHTML = initCode;
@@ -343,8 +352,7 @@
                 object = fistObject;
                 action = fistAction;
 			    mixer = fistMixer;
-			    action.loop = THREE.ONCE;
-
+			    action.loop = THREE.LoopOnce;
 			    initCode = 'Gesture: Fist';
 			    gesture.innerHTML = initCode;
 
@@ -357,7 +365,7 @@
 			    object = waveInObject;
 			    action = waveInAction;
 			    mixer = waveInMixer;
-			    action.loop = THREE.ONCE;
+			    action.loop = THREE.LoopOnce;
 
 			    initCode = 'Gesture: Wave in';
 			    gesture.innerHTML = initCode;
@@ -371,7 +379,7 @@
 			    object = waveOutObject;
 			    action = waveOutAction;
 			    mixer = waveOutMixer;
-			    action.loop = THREE.ONCE;
+			    action.loop = THREE.LoopOnce;
 
 			    initCode = 'Gesture: Wave out';
 			    gesture.innerHTML = initCode;
@@ -385,7 +393,7 @@
 			    object = spreadObject;
 			    action = spreadAction;
 			    mixer = spreadMixer;
-			    action.loop = THREE.ONCE;
+			    action.loop = THREE.LoopOnce;
 
 			    initCode = 'Gesture: Spread fingers';
 			    gesture.innerHTML = initCode;
@@ -399,7 +407,7 @@
 			    object = pinchObject;
 			    action = pinchAction;
 			    mixer = pinchMixer;
-			    action.loop = THREE.ONCE;
+			    action.loop = THREE.LoopOnce;
 
 			    initCode = 'Gesture: Pinch';
 			    gesture.innerHTML = initCode;

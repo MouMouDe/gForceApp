@@ -11,7 +11,7 @@ import android.os.Handler;
 
 public class OymotionApplication extends Application {
     public static OymotionApplication context;
-
+    public static boolean oadProgress = false;
 
     @Override
     public void onCreate() {

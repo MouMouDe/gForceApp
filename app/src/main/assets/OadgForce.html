@@ -80,7 +80,7 @@
 </head>
 <body>
 <div id="divi">
-    <div id="header"><div>OAD_Service</div>
+    <div id="header" onclick="funAlert()"><div>OAD_Service</div>
     </div>
 
     <div id="connect" onclick="funConnect()">Disconnect</div>
@@ -100,7 +100,7 @@
 <div id="back">
     <img id="logo" src="file:///android_asset/Device.png" width="150" height="150" onclick="funSelectUpgrade()">
     <div id="tip-pic">
-        Click the picture to select the file to upgrade...
+        Touch the picture to select the file to upgrade...
     </div>
 
 </div>
@@ -163,6 +163,11 @@
 
         function funConnect(){
             window.oad.deviceDisConnect();
+        }
+
+        function funAlert(){
+            console.log('111111111');
+            alert('aaaaaaaa');
         }
 
 </script>
